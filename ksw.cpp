@@ -23,6 +23,7 @@
    SOFTWARE.
 */
 
+#include "common.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <emmintrin.h>
@@ -45,7 +46,7 @@ const kswr_t g_defr = {0, -1, -1, -1, -1, -1, -1};
 struct _kswq_t {
     int qlen, slen;
     uint8_t shift, mdiff, max, size;
-    __m128i *qp, *H0, *H1, *E, *Hmax;
+    __m128i *query_profile, *H0, *H1, *E, *Hmax;
 };
 
 /**
@@ -68,8 +69,9 @@ kswq_t *ksw_qinit(int size, int qlen, const uint8_t *query, int m, const int8_t 
     slen = (qlen + p - 1) / p;    // segmented length
     q = (kswq_t *)malloc(sizeof(kswq_t) + 256 +
                          16 * slen * (m + 4));    // a single block of memory
-    q->qp = (__m128i *)(((size_t)q + sizeof(kswq_t) + 15) >> 4 << 4);    // align memory
-    q->H0 = q->qp + slen * m;
+    q->query_profile =
+        (__m128i *)(((size_t)q + sizeof(kswq_t) + 15) >> 4 << 4);    // align memory
+    q->H0 = q->query_profile + slen * m;
     q->H1 = q->H0 + slen;
     q->E = q->H1 + slen;
     q->Hmax = q->E + slen;
@@ -89,7 +91,7 @@ kswq_t *ksw_qinit(int size, int qlen, const uint8_t *query, int m, const int8_t 
     // An example: p=8, qlen=19, slen=3 and segmentation:
     //  {{0,3,6,9,12,15,18,-1},{1,4,7,10,13,16,-1,-1},{2,5,8,11,14,17,-1,-1}}
     if(size == 1) {
-        int8_t *t = (int8_t *)q->qp;
+        int8_t *t = (int8_t *)q->query_profile;
         for(a = 0; a < m; ++a) {
             int i, k, nlen = slen * p;
             const int8_t *ma = mat + a * m;
@@ -98,7 +100,7 @@ kswq_t *ksw_qinit(int size, int qlen, const uint8_t *query, int m, const int8_t 
                     *t++ = (k >= qlen ? 0 : ma[query[k]]) + q->shift;
         }
     } else {
-        int16_t *t = (int16_t *)q->qp;
+        int16_t *t = (int16_t *)q->query_profile;
         for(a = 0; a < m; ++a) {
             int i, k, nlen = slen * p;
             const int8_t *ma = mat + a * m;
@@ -152,8 +154,9 @@ kswr_t ksw_u8(kswq_t *q, int tlen, const uint8_t *target, int _o_del, int _e_del
     // the core loop
     for(i = 0; i < tlen; ++i) {
         int j, k, cmp, imax;
-        __m128i e, h, t, f = zero, max = zero,
-                         *S = q->qp + target[i] * slen;    // s is the 1st score vector
+        __m128i e, h, t,
+            f = zero, max = zero,
+            *S = q->query_profile + target[i] * slen;    // s is the 1st score vector
         h = _mm_load_si128(H0 + slen -
                            1);    // h={2,5,8,11,14,17,-1,-1} in the above example
         h = _mm_slli_si128(
@@ -291,8 +294,9 @@ kswr_t ksw_i16(kswq_t *q, int tlen, const uint8_t *target, int _o_del, int _e_de
     // the core loop
     for(i = 0; i < tlen; ++i) {
         int j, k, imax;
-        __m128i e, t, h, f = zero, max = zero,
-                         *S = q->qp + target[i] * slen;    // s is the 1st score vector
+        __m128i e, t, h,
+            f = zero, max = zero,
+            *S = q->query_profile + target[i] * slen;    // s is the 1st score vector
         h = _mm_load_si128(H0 + slen -
                            1);    // h={2,5,8,11,14,17,-1,-1} in the above example
         h = _mm_slli_si128(h, 2);
@@ -423,18 +427,17 @@ int ksw_extend2(int qlen, const uint8_t *query, int tlen, const uint8_t *target,
                 const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w,
                 int end_bonus, int zdrop, int h0, int *_qle, int *_tle, int *_gtle,
                 int *_gscore, int *_max_off) {
-    eh_t *eh;      // score array
-    int8_t *qp;    // query profile
     int i, j, k, oe_del = o_del + e_del, oe_ins = o_ins + e_ins, beg, end, max, max_i,
                  max_j, max_ins, max_del, max_ie, gscore, max_off;
     if(h0 < 0) h0 = 0;
     // allocate memory
-    qp = malloc(qlen * m);
-    eh = calloc(qlen + 1, 8);
+    auto query_profile = make_malloc<int8_t>(qlen * m);
+    // eh_t *eh;                 // score array
+    auto eh = make_calloc<eh_t>(qlen + 1);
     // generate the query profile
     for(k = i = 0; k < m; ++k) {
         const int8_t *p = &mat[k * m];
-        for(j = 0; j < qlen; ++j) qp[i++] = p[query[j]];
+        for(j = 0; j < qlen; ++j) query_profile[i++] = p[query[j]];
     }
     // fill the first row
     eh[0].h = h0;
@@ -457,7 +460,7 @@ int ksw_extend2(int qlen, const uint8_t *query, int tlen, const uint8_t *target,
     beg = 0, end = qlen;
     for(i = 0; LIKELY(i < tlen); ++i) {
         int t, f = 0, h1, m = 0, mj = -1;
-        int8_t *q = &qp[target[i] * qlen];
+        int8_t *q = &query_profile[target[i] * qlen];
         // compute the first column
         h1 = h0 - (o_del + e_del * (i + 1));
         if(h1 < 0) h1 = 0;
@@ -516,8 +519,8 @@ int ksw_extend2(int qlen, const uint8_t *query, int tlen, const uint8_t *target,
         end = j;
         //beg = 0; end = qlen; // uncomment this line for debugging
     }
-    free(eh);
-    free(qp);
+    // free(eh);
+    // free(query_profile);
     if(_qle) *_qle = max_j + 1;
     if(_tle) *_tle = max_i + 1;
     if(_gtle) *_gtle = max_ie + 1;
@@ -539,38 +542,34 @@ int ksw_extend(int qlen, const uint8_t *query, int tlen, const uint8_t *target, 
 
 #define MINUS_INF -0x40000000
 
-static inline uint32_t *push_cigar(int *n_cigar, int *m_cigar, uint32_t *cigar, int op,
+static inline void push_cigar(unique_C_ptr<uint32_t>& cigar, int *n_cigar, int *m_cigar,  int op,
                                    int len) {
     if(*n_cigar == 0 || op != (int)(cigar[(*n_cigar) - 1] & 0xf)) {
         if(*n_cigar == *m_cigar) {
             *m_cigar = *m_cigar ? (*m_cigar) << 1 : 4;
-            cigar = realloc(cigar, (*m_cigar) << 2);
+            cigar.realloc(*m_cigar);
         }
         cigar[(*n_cigar)++] = len << 4 | op;
     } else
         cigar[(*n_cigar) - 1] += len << 4;
-    return cigar;
 }
 
 int ksw_global2(int qlen, const uint8_t *query, int tlen, const uint8_t *target, int m,
                 const int8_t *mat, int o_del, int e_del, int o_ins, int e_ins, int w,
                 int *n_cigar_, uint32_t **cigar_) {
-    eh_t *eh;
-    int8_t *qp;    // query profile
-    int i, j, k, oe_del = o_del + e_del, oe_ins = o_ins + e_ins, score, n_col;
-    uint8_t *
-        z;    // backtrack matrix; in each cell: f<<4|e<<2|h; in principle, we can halve the memory, but backtrack will be a little more complex
+    int i, j, k, oe_del = o_del + e_del, oe_ins = o_ins + e_ins, score;
+    // backtrack matrix; in each cell: f<<4|e<<2|h; in principle, we can halve the memory, but backtrack will be a little more complex
     if(n_cigar_) *n_cigar_ = 0;
     // allocate memory
-    n_col = qlen < 2 * w + 1 ? qlen
-                             : 2 * w + 1;    // maximum #columns of the backtrack matrix
-    z = malloc(n_col * tlen);
-    qp = malloc(qlen * m);
-    eh = calloc(qlen + 1, 8);
+    // maximum #columns of the backtrack matrix
+    int n_col = qlen < 2 * w + 1 ? qlen : 2 * w + 1;
+    auto z = make_malloc<uint8_t>(n_col * tlen);
+    auto query_profile = make_malloc<int8_t>(qlen * m);
+    auto eh = make_calloc<eh_t>(qlen + 1);
     // generate the query profile
     for(k = i = 0; k < m; ++k) {
         const int8_t *p = &mat[k * m];
-        for(j = 0; j < qlen; ++j) qp[i++] = p[query[j]];
+        for(j = 0; j < qlen; ++j) query_profile[i++] = p[query[j]];
     }
     // fill the first row
     eh[0].h = 0;
@@ -582,7 +581,7 @@ int ksw_global2(int qlen, const uint8_t *query, int tlen, const uint8_t *target,
     // DP loop
     for(i = 0; LIKELY(i < tlen); ++i) {    // target sequence is in the outer loop
         int32_t f = MINUS_INF, h1, beg, end, t;
-        int8_t *q = &qp[target[i] * qlen];
+        int8_t *q = &query_profile[target[i] * qlen];
         uint8_t *zi = &z[i * n_col];
         beg = i > w ? i - w : 0;
         end = i + w + 1 < qlen
@@ -631,28 +630,26 @@ int ksw_global2(int qlen, const uint8_t *query, int tlen, const uint8_t *target,
     score = eh[qlen].h;
     if(n_cigar_ && cigar_) {    // backtrack
         int n_cigar = 0, m_cigar = 0, which = 0;
-        uint32_t *cigar = 0, tmp;
+        unique_C_ptr<uint32_t> cigar = 0;
+        uint32_t tmp;
         i = tlen - 1;
         k = (i + w + 1 < qlen ? i + w + 1 : qlen) - 1;    // (i,k) points to the last cell
         while(i >= 0 && k >= 0) {
             which = z[i * n_col + (k - (i > w ? i - w : 0))] >> (which << 1) & 3;
             if(which == 0)
-                cigar = push_cigar(&n_cigar, &m_cigar, cigar, 0, 1), --i, --k;
+                push_cigar(cigar, &n_cigar, &m_cigar, 0, 1), --i, --k;
             else if(which == 1)
-                cigar = push_cigar(&n_cigar, &m_cigar, cigar, 2, 1), --i;
+                push_cigar(cigar, &n_cigar, &m_cigar, 2, 1), --i;
             else
-                cigar = push_cigar(&n_cigar, &m_cigar, cigar, 1, 1), --k;
+                push_cigar(cigar, &n_cigar, &m_cigar, 1, 1), --k;
         }
-        if(i >= 0) cigar = push_cigar(&n_cigar, &m_cigar, cigar, 2, i + 1);
-        if(k >= 0) cigar = push_cigar(&n_cigar, &m_cigar, cigar, 1, k + 1);
+        if(i >= 0) push_cigar(cigar, &n_cigar, &m_cigar, 2, i + 1);
+        if(k >= 0) push_cigar(cigar, &n_cigar, &m_cigar, 1, k + 1);
         for(i = 0; i<n_cigar>> 1; ++i)    // reverse CIGAR
             tmp = cigar[i], cigar[i] = cigar[n_cigar - 1 - i],
             cigar[n_cigar - 1 - i] = tmp;
-        *n_cigar_ = n_cigar, *cigar_ = cigar;
+        *n_cigar_ = n_cigar, *cigar_ = cigar.release();
     }
-    free(eh);
-    free(qp);
-    free(z);
     return score;
 }
 

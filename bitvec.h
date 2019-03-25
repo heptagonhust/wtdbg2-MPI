@@ -165,24 +165,6 @@ static inline BitVec *load_bitvec(FILE *inp) {
     return bitv;
 }
 
-#if 0
-static inline BitVec* mem_load_bitvec(void *mem, FILE *inp){
-	BitVec *bitv;
-	size_t off, n;
-	bitv = mem;
-	off = ((sizeof(BitVec) + 7) / 8) * 8;
-	if((n = fread(&bitv->n_bit, sizeof(u8i), 1, inp)) != 1) return NULL;
-	if((n = fread(&bitv->n_cap, sizeof(u8i), 1, inp)) != 1) return NULL;
-	bitv->sums = NULL;
-	bitv->hash = NULL;
-	bitv->hash_size = 0;
-	bitv->bits = mem + off;
-	off += (bitv->n_cap / 64) * 8;
-	if((n = fread(bitv->bits, sizeof(u8i), bitv->n_cap / 64, inp)) != bitv->n_cap / 64) return NULL;
-	return bitv;
-}
-#endif
-
 static inline void clear_bitvec(BitVec *bitv) {
     bitv->n_bit = 0;
 }
@@ -541,42 +523,5 @@ static inline void free_bitvec(BitVec *bitv) {
     if(bitv->hash) free(bitv->hash);
     free(bitv);
 }
-
-#if 0
-
-static inline size_t mem_size_bitvec(BitVec *bitv){
-	size_t m;
-	m = (sizeof(BitVec) + 7) / 8 * 8 + ((bitv->n_cap / 64) * 8);
-	if(bitv->sums){
-		m += (bitv->sum_size * 2 + 1) * 8;
-	}
-	if(bitv->hash){
-		m += bitv->hash_size * 8;
-	}
-	return m;
-}
-
-static inline size_t mem_dump_bitvec(BitVec *bitv, void *mem){
-	BitVec *clone;
-	size_t off;
-	clone = mem;
-	memcpy(clone, bitv, sizeof(BitVec));
-	off = ((sizeof(BitVec) + 7) / 8) * 8;
-	clone->bits = mem + off;
-	memcpy(clone->bits, bitv->bits, (bitv->n_cap / 64) * 8);
-	off += (bitv->n_cap / 64) * 8;
-	if(bitv->sums){
-		clone->sums = mem + off;
-		memcpy(clone->sums, bitv->sums, (bitv->sum_size * 2 + 1) * 8);
-		off += (bitv->sum_size * 2 + 1) * 8;
-	}
-	if(bitv->hash){
-		clone->hash = mem + off;
-		memcpy(clone->hash, bitv->hash, bitv->hash_size * 8);
-		off += bitv->hash_size * 8;
-	}
-	return off;
-}
-#endif
 
 #endif

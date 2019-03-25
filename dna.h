@@ -25,7 +25,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "list.h"
-#include "bitvec.h"
 #include "hashset.h"
 #include "thread.h"
 
