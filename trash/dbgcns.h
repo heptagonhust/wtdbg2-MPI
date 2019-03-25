@@ -24,7 +24,7 @@
 #include "list.h"
 #include "hashset.h"
 #include "thread.h"
-#include "ksw.h"
+#include "ksw/ksw.h"
 #include "chararray.h"
 
 /*

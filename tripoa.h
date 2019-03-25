@@ -21,7 +21,7 @@
 #define TRI_PO_MSA_CNS_RJ_H
 
 #include "poacns.h"
-#include "ksw.h"
+#include "ksw/ksw.h"
 
 typedef struct {
     SeqBank *seqs;

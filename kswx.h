@@ -20,7 +20,7 @@
 #ifndef __KSW_EXT_RJ_H
 #define __KSW_EXT_RJ_H
 
-#include "ksw.h"
+#include "ksw/ksw.h"
 #include "dna.h"
 #include "chararray.h"
 #include "list.h"
