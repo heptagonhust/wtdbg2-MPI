@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.12)
 
-set(CMAKE_C_FLAGS "-Wall -Wno-unused-but-set-variable -mpopcnt -march=native")
+set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-but-set-variable -mpopcnt -march=native")
 
-add_library(ksw ksw.c)
+add_library(ksw ksw.cpp)
 target_link_libraries(ksw pthread m rt z)
 
 
-add_executable(kbm kbm.c)
-add_executable(wtdbg wtdbg.c)
-add_executable(wtdbg-cns wtdbg-cns.c)
-add_executable(wtpoa-cns wtpoa-cns.c)
+add_executable(kbm kbm.cpp)
+add_executable(wtdbg wtdbg.cpp)
+add_executable(wtdbg-cns wtdbg-cns.cpp)
+add_executable(wtpoa-cns wtpoa-cns.cpp)
 
 target_link_libraries(kbm ksw)
 target_link_libraries(wtdbg ksw)
@@ -19,5 +19,5 @@ target_link_libraries(wtpoa-cns ksw)
 
 
 
-add_executable(pgzf pgzf.c)
+add_executable(pgzf pgzf.cpp)
 target_link_libraries(pgzf pthread m rt z)
