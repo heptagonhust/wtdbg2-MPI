@@ -164,7 +164,7 @@ static inline uint64_t _rj_hashset_find_prime(uint64_t n) {
         set->load_factor = factor;                                                \
         set->max = set->size * set->load_factor;                                  \
         set->iter_ptr = 0;                                                        \
-        set->array = calloc(set->size, set->e_size);                              \
+        set->array = (decltype(set->array))calloc(set->size, set->e_size);                              \
         set->ones = init_bitvec(set->size);                                       \
         set->dels = init_bitvec(set->size);                                       \
         set->userdata = NULL;                                                     \
@@ -388,7 +388,7 @@ static inline uint64_t _rj_hashset_find_prime(uint64_t n) {
 
 #define freeze_hashset_macro(hash_type, hash_ele_type, hash_code_macro)             \
     static inline int freeze_##hash_type(hash_type *set, float load_factor) {       \
-        size_t *hvs, i, j, sz;                                                      \
+        size_t i, j, sz;                                                      \
         if(set->dels == NULL) return 0;                                             \
         if(load_factor == 0) load_factor = set->load_factor;                        \
         sz = set->count / load_factor;                                              \
@@ -407,9 +407,9 @@ static inline uint64_t _rj_hashset_find_prime(uint64_t n) {
         set->size = sz;                                                             \
         set->load_factor = load_factor;                                             \
         set->ocp = set->count;                                                      \
-        set->array = realloc(set->array, (set->count + 1) * sizeof(hash_ele_type)); \
+        set->array = (hash_ele_type*)realloc(set->array, (set->count + 1) * sizeof(hash_ele_type)); \
         memset(set->array + set->count, 0, sizeof(hash_ele_type));                  \
-        hvs = malloc(set->count * sizeof(size_t));                                  \
+        auto hvs = make_malloc<size_t>(set->count);                                  \
         for(i = 0; i < set->count; i++) {                                           \
             hvs[i] = hash_code_macro(set->array[i]) % sz;                           \
         }                                                                           \
@@ -426,7 +426,6 @@ static inline uint64_t _rj_hashset_find_prime(uint64_t n) {
             one_bitvec(set->ones, j);                                               \
             j++;                                                                    \
         }                                                                           \
-        free(hvs);                                                                  \
         index_bitvec(set->ones);                                                    \
         return 1;                                                                   \
     }
@@ -462,7 +461,7 @@ static inline uint64_t _rj_hashset_find_prime(uint64_t n) {
         do {                                                                        \
             n = _rj_hashset_find_prime(n * 2);                                      \
         } while(n * set->load_factor < set->count + num);                           \
-        set->array = realloc(set->array, n * set->e_size);                          \
+        set->array = (hash_ele_type*)realloc(set->array, n * set->e_size);                          \
         if(set->array == NULL) {                                                    \
             fprintf(stderr, "-- Out of memory --\n");                               \
             print_backtrace(stderr, 20);                                            \

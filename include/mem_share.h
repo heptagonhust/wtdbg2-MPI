@@ -17,9 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __MEM_SHARE_RJ_H
-#define __MEM_SHARE_RJ_H
-
+#pragma once
+#include "common.h"
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -164,13 +163,11 @@ typedef long double f8i;
 
 #ifndef __HEADER_NO_EXECINFO
 static inline void print_backtrace(FILE *out, int max_frame) {
-    void **buffer;
     int frames;
     if(max_frame < 1) max_frame = 1;
-    buffer = malloc(sizeof(void *) * max_frame);
-    frames = backtrace(buffer, max_frame);
-    backtrace_symbols_fd(buffer, frames, fileno(out));
-    free(buffer);
+    auto buffer = make_malloc<void*>(max_frame);
+    frames = backtrace(buffer.get(), max_frame);
+    backtrace_symbols_fd(buffer.get(), frames, fileno(out));
 }
 #else
 static inline void print_backtrace(FILE *out, int max_frame) {
@@ -203,8 +200,8 @@ static inline size_t roundup_times(size_t v, size_t base) {
 
 static inline void *malloc16(size_t size) {
     u1i *p, *q;
-    p = malloc(size + 16);
-    if(p == NULL) return NULL;
+    p = (u1i*) malloc(size + 16);
+    if(p == nullptr) return nullptr;
     q = (u1i *)(((u8i)(p + 16)) & (~0xFLLU));
     *(q - 1) = q - p;
     return q;
@@ -240,7 +237,7 @@ static inline size_t encap_list(void **buffer, size_t e_size, size_t size, size_
         cap = (size + inc + 0x3FFFFFFFLLU) & (MAX_U8 << 30);
     }
     ptr = realloc((*buffer) - n_head * e_size, e_size * (cap + n_head));
-    if(ptr == NULL) {
+    if(ptr == nullptr) {
         fprintf(stderr,
                 " -- Out of memory, try to allocate %llu bytes, old size %llu, old addr "
                 "%p in %s -- %s:%d --\n",
@@ -274,7 +271,7 @@ static inline void nano_sleep(u8i nsec) {
     struct timespec timeout;
     timeout.tv_sec = nsec / 1000000000;
     timeout.tv_nsec = nsec % 1000000000;
-    nanosleep(&timeout, NULL);
+    nanosleep(&timeout, nullptr);
 }
 
 #define micro_sleep(usec) nano_sleep(((u8i)(usec)) * 1000LLU)
@@ -282,14 +279,14 @@ static inline void nano_sleep(u8i nsec) {
 
 static inline long long microtime() {
     struct timeval tv;
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     return ((long long)tv.tv_sec) * 1000000 + tv.tv_usec;
 }
 
 static inline char *date() {
     time_t tm;
     char *dstr, *p;
-    tm = time(NULL);
+    tm = time(nullptr);
     p = dstr = asctime(localtime(&tm));
     while(*p) {
         if(*p == '\n') {
@@ -319,7 +316,7 @@ static inline int file_exists(const char *filename) {
     char *realpath;
     struct stat s;
     realpath = canonicalize_file_name(filename);
-    if(realpath == NULL) return 0;
+    if(realpath == nullptr) return 0;
     if(stat(realpath, &s) == -1) {
         free(realpath);
         return 0;
@@ -341,7 +338,7 @@ static inline int dir_exists(const char *filename) {
     char *realpath;
     struct stat s;
     realpath = canonicalize_file_name(filename);
-    if(realpath == NULL) return 0;
+    if(realpath == nullptr) return 0;
     if(stat(realpath, &s) == -1) {
         free(realpath);
         return 0;
@@ -361,7 +358,7 @@ static inline int dir_exists(const char *filename) {
 
 static inline char *relative_filename(char *filename) {
     char *ptr;
-    if(filename == NULL) return NULL;
+    if(filename == nullptr) return nullptr;
     ptr = filename + strlen(filename);
     while(ptr >= filename) {
         if(*ptr == '/') break;
@@ -370,13 +367,14 @@ static inline char *relative_filename(char *filename) {
     return strdup(ptr + 1);
 }
 
-static inline char *absolute_filename(char *filename) {
-    char *path, *cwd, *ptr;
+static inline unique_C_ptr<char> absolute_filename(const char *filename) {
+    const char *ptr;
+    char* cwd;
     int x, y, z, i;
-    if(filename == NULL) return NULL;
-    if(filename[0] == '/') return strdup(filename);
-    cwd = getcwd(NULL, 0);
-    path = malloc(strlen(cwd) + strlen(filename) + 2);
+    if(filename == nullptr) return nullptr;
+    if(filename[0] == '/') return unique_C_ptr<char>(strdup(filename));
+    cwd = getcwd(nullptr, 0);
+    auto path = make_malloc<char>(strlen(cwd) + strlen(filename) + 2);
     x = 0;
     y = 0;
     z = 0;
@@ -407,38 +405,34 @@ static inline char *absolute_filename(char *filename) {
         fprintf(stderr, " -- BAD File name: '%s'. PWD = '%s' --\n", filename, cwd);
         fflush(stderr);
         free(cwd);
-        return NULL;
+        return nullptr;
     }
-    strncpy(path, cwd, i);
+    strncpy(path.get(), cwd, i);
     free(cwd);
     path[i] = '/';
-    strncpy(path + i + 1, filename + y, strlen(filename) - y);
+    strncpy(path.get() + i + 1, filename + y, strlen(filename) - y);
     path[i + 1 + strlen(filename) - y] = 0;
     return path;
 }
 
 static inline int exists_file(char *dir, char *filename) {
-    char *realpath, *fullname;
     int ret;
-    realpath = absolute_filename(dir ? dir : ".");
-    if(!dir_exists(realpath)) {
-        free(realpath);
+    auto realpath = absolute_filename(dir ? dir : ".");
+    if(!dir_exists(realpath.get())) {
         return 0;
     }
-    fullname = malloc(strlen(realpath) + strlen(filename) + 3);
-    sprintf(fullname, "%s/%s", realpath, filename);
-    free(realpath);
-    ret = file_exists(fullname);
-    free(fullname);
+    auto fullname = make_malloc<char>(strlen(realpath.get()) + strlen(filename) + 3);
+    sprintf(fullname.get(), "%s/%s", realpath.get(), filename);
+    ret = file_exists(fullname.get());
     return ret;
 }
 
 static inline FILE *open_file_for_read(const char *name, char *suffix) {
     const char *full_name;
     FILE *file;
-    if(name == NULL && suffix == NULL) {
+    if(name == nullptr && suffix == nullptr) {
         full_name = "-";
-    } else if(suffix == NULL) {
+    } else if(suffix == nullptr) {
         full_name = name;
     } else {
         char* tmp = (char *)alloca(strlen(name) + strlen(suffix) + 1);
@@ -451,9 +445,9 @@ static inline FILE *open_file_for_read(const char *name, char *suffix) {
     } else {
         file = fopen(full_name, "r");
     }
-    if(file == NULL) {
+    if(file == nullptr) {
         fprintf(stderr, "Cannot open file for read: %s\n", full_name);
-        perror(NULL);
+        perror(nullptr);
         exit(1);
     }
     return file;
@@ -462,9 +456,9 @@ static inline FILE *open_file_for_read(const char *name, char *suffix) {
 static inline FILE *open_file_for_write(const char *name, const char *suffix, int overwrite) {
     const char *full_name;
     FILE *file;
-    if(name == NULL && suffix == NULL) {
+    if(name == nullptr && suffix == nullptr) {
         full_name = "-";
-    } else if(suffix == NULL) {
+    } else if(suffix == nullptr) {
         full_name = name;
     } else {
         auto tmp = (char *)alloca(strlen(name) + strlen(suffix) + 1);
@@ -480,9 +474,9 @@ static inline FILE *open_file_for_write(const char *name, const char *suffix, in
     } else {
         file = fopen(full_name, "w+");
     }
-    if(file == NULL) {
+    if(file == nullptr) {
         fprintf(stderr, "Cannot open file for write: %s\n", full_name);
-        perror(NULL);
+        perror(nullptr);
         exit(1);
     }
     return file;
@@ -491,9 +485,9 @@ static inline FILE *open_file_for_write(const char *name, const char *suffix, in
 static inline FILE *open_file_for_append(const char *name, char *suffix) {
     const char *full_name;
     FILE *file;
-    if(name == NULL && suffix == NULL) {
+    if(name == nullptr && suffix == nullptr) {
         full_name = "-";
-    } else if(suffix == NULL) {
+    } else if(suffix == nullptr) {
         full_name = name;
     } else {
         auto tmp = (char *)alloca(strlen(name) + strlen(suffix) + 1);
@@ -506,16 +500,16 @@ static inline FILE *open_file_for_append(const char *name, char *suffix) {
     } else {
         file = fopen(full_name, "a+");
     }
-    if(file == NULL) {
+    if(file == nullptr) {
         fprintf(stderr, "Cannot open file for append: %s\n", full_name);
-        perror(NULL);
+        perror(nullptr);
         exit(1);
     }
     return file;
 }
 
 static inline void close_file(FILE *file) {
-    if(file == NULL) return;
+    if(file == nullptr) return;
     if(file == stdin || file == stdout || file == stderr) return;
     if(fclose(file)) perror("Error on close file");
 }
@@ -554,7 +548,7 @@ static inline int get_linux_sys_info(u8i *memtotal, u8i *memavail, int *ncpu) {
     int core;
     if(memtotal || memavail) {
         freed = buffered = cached = 0;
-        fp = open_file_for_read("/proc/meminfo", NULL);
+        fp = open_file_for_read("/proc/meminfo", nullptr);
         while((fscanf(fp, "%s", buffer)) > 0) {
             if(strstr(buffer, "MemTotal") == buffer) {
                 fscanf(fp, "%llu", memtotal);
@@ -573,7 +567,7 @@ static inline int get_linux_sys_info(u8i *memtotal, u8i *memavail, int *ncpu) {
         }
     }
     if(ncpu) {
-        fp = open_file_for_read("/proc/cpuinfo", NULL);
+        fp = open_file_for_read("/proc/cpuinfo", nullptr);
         core = 0;
         while((fscanf(fp, "%s", buffer)) > 0) {
             if(strstr(buffer, "processor") == buffer) {
@@ -598,7 +592,7 @@ static inline int get_linux_proc_info(u8i *rss, u8i *vsize, double *utime,
     //page_size = getpagesize();
     page_size = sysconf(_SC_PAGESIZE);
     sprintf(str, "/proc/%u/stat", getpid());
-    fp = open_file_for_read(str, NULL);
+    fp = open_file_for_read(str, nullptr);
     n_spc = 0;
     while((c = fgetc(fp)) != EOF) {
         if(c == ' ') ++n_spc;
@@ -629,10 +623,10 @@ double rtime_limit;
 int interval;
 thread_end_def(_proc_deamon);
 
-static struct _proc_deamon_struct *_sig_proc_deamon = NULL;
+static struct _proc_deamon_struct *_sig_proc_deamon = nullptr;
 static inline void print_proc_stat_info(int signum) {
     FILE *log;
-    if(_sig_proc_deamon == NULL) return;
+    if(_sig_proc_deamon == nullptr) return;
     log = stderr;
     thread_beg_syn_read(_sig_proc_deamon);
     fprintf(log,
@@ -657,7 +651,7 @@ static inline void _deamon_config_proc_limit(int signum) {
     char *val;
     u8i rss_limit, rtime_limit;
     UNUSED(signum);
-    if(_sig_proc_deamon == NULL) return;
+    if(_sig_proc_deamon == nullptr) return;
     thread_beg_syn_write(_sig_proc_deamon);
     val = getenv("LIMIT_RSS");
     if(val) {
@@ -813,7 +807,7 @@ static inline uint8_t mem_size_gap(size_t size) {
 static inline size_t mem_dump(void *mem, size_t len, FILE *out) {
     size_t size;
     uint8_t i, v;
-    if(mem == NULL) return 0;
+    if(mem == nullptr) return 0;
     size = mem_size_round(len);
     if(out) {
         fwrite(mem, 1, len, out);
@@ -845,7 +839,7 @@ typedef struct obj_desc_t {
 
 // Basic obj_desc_t, size = 1 byte
 static const struct obj_desc_t OBJ_DESC_DATA = {
-    "OBJ_DESC_DATA", 1, 0, {}, {}, {}, NULL, NULL};
+    "OBJ_DESC_DATA", 1, 0, {}, {}, {}, nullptr, nullptr};
 // Special obj_desc_t for string, set mem_type=0 and addr=0 to call the _char_array_obj_desc_cnt on itself
 // so that we know the length of string, then set size=0 to indicate that it is an virtual reference, program should add MEM_PTR_TYPE_DUMP to its mem_type
 static inline size_t _char_array_obj_desc_cnt(void *obj, int idx) {
@@ -856,15 +850,15 @@ static inline size_t _char_array_obj_desc_cnt(void *obj, int idx) {
 }
 static const struct obj_desc_t OBJ_DESC_CHAR_ARRAY = {
     "OBJ_DESC_CHAR_ARRAY",    0,   1, {0}, {0}, {&OBJ_DESC_DATA},
-    _char_array_obj_desc_cnt, NULL};
+    _char_array_obj_desc_cnt, nullptr};
 
 static inline size_t mem_size_obj(void *obj, uint8_t mem_type, const obj_desc_t *desc,
                                   size_t size, size_t cnt) {
     size_t m;
     void *ref;
     int i;
-    if(desc == NULL) return size;
-    if(obj == NULL) return size;
+    if(desc == nullptr) return size;
+    if(obj == nullptr) return size;
     switch(mem_type) {
         case 3: size += mem_size_round(sizeof(void *) * cnt);
         case 2:
@@ -881,7 +875,7 @@ static inline size_t mem_size_obj(void *obj, uint8_t mem_type, const obj_desc_t 
     for(m = 0; m < cnt; m++) {
         if(mem_type & 0x02) {
             ref = ((void **)obj)[m];
-            if(ref == NULL) continue;
+            if(ref == nullptr) continue;
         } else {
             ref = obj + m * desc->size;
         }
@@ -907,8 +901,8 @@ static inline void mem_dup_obj(void **ret, void *obj, size_t aux_data, uint8_t m
     size_t m;
     void *ref, *chd;
     int i;
-    if(desc == NULL || obj == NULL) {
-        *ret = NULL;
+    if(desc == nullptr || obj == nullptr) {
+        *ret = nullptr;
         return;
     }
     if(mem_type & 0x01) {
@@ -921,13 +915,13 @@ static inline void mem_dup_obj(void **ret, void *obj, size_t aux_data, uint8_t m
             // OBJ_DESC_CHAR_ARRAY
         }
     }
-    if(desc->n_child == 0 && desc->post == NULL) {
+    if(desc->n_child == 0 && desc->post == nullptr) {
         //if((mem_type & 0x02) == 0 && desc->n_child == 0){
     } else {
         for(m = 0; m < cnt; m++) {
             if(mem_type & 0x02) {
                 ref = ((void **)obj)[m];
-                if(ref == NULL) continue;
+                if(ref == nullptr) continue;
                 chd = malloc(desc->size);
                 memcpy(chd, ref, desc->size);
                 ret[m] = chd;
@@ -961,7 +955,7 @@ static inline size_t mem_dump_obj(void *obj, uint8_t mem_type, const obj_desc_t 
     void *ref;
     size_t size, m;
     int i;
-    if(obj == NULL) return offset;
+    if(obj == nullptr) return offset;
     size = offset;
     if(mem_type & 0x01) {
         if(mem_type & 0x02) {
@@ -975,7 +969,7 @@ static inline size_t mem_dump_obj(void *obj, uint8_t mem_type, const obj_desc_t 
         for(m = 0; m < cnt; m++) {
             if(mem_type & 0x02) {
                 ref = ((void **)obj)[m];
-                if(ref == NULL) continue;
+                if(ref == nullptr) continue;
                 size += mem_dump(ref, desc->size, out);
             } else {
                 ref = obj + m * desc->size;
@@ -1010,7 +1004,7 @@ static inline size_t mem_load_obj(void *obj, size_t aux_data, uint8_t mem_type,
     size_t addr, m;
     int i;
     void *ref, **ptr;
-    if(obj == NULL) return 0;
+    if(obj == nullptr) return 0;
     addr = addr_beg ?: (size_t)obj;
     if(mem_type & 0x01) {
         if(mem_type & 0x02) {
@@ -1019,13 +1013,13 @@ static inline size_t mem_load_obj(void *obj, size_t aux_data, uint8_t mem_type,
             addr += mem_size_round(cnt * desc->size);
         }
     }
-    if(desc->n_child == 0 && desc->post == NULL) {
+    if(desc->n_child == 0 && desc->post == nullptr) {
         switch(mem_type) {
             case 2:
             case 3:
                 for(m = 0; m < cnt; m++) {
                     ptr = ((void **)obj) + m;
-                    if(*ptr == NULL) continue;
+                    if(*ptr == nullptr) continue;
                     *ptr = (void *)addr;
                     addr += mem_size_round(desc->size);
                 }
@@ -1035,16 +1029,16 @@ static inline size_t mem_load_obj(void *obj, size_t aux_data, uint8_t mem_type,
     for(m = 0; m < cnt; m++) {
         if(mem_type & 0x02) {
             ptr = ((void **)obj) + m;
-            if(*ptr == NULL) continue;
+            if(*ptr == nullptr) continue;
             ref = *ptr = (void *)addr;
             addr += mem_size_round(desc->size);
         } else {
             ref = obj + m * desc->size;
         }
         for(i = 0; i < desc->n_child; i++) {
-            ptr = ref + desc->addr[i];
+            ptr =(void**)(ref + desc->addr[i]); /// TODO: bug?
             if(desc->mem_type[i] & 0x01) {
-                if(*ptr == NULL) continue;
+                if(*ptr == nullptr) continue;
                 *ptr = (void *)addr;
                 addr =
                     mem_load_obj(*ptr, aux_data,
@@ -1068,7 +1062,7 @@ static inline size_t mem_tree_obj(FILE *out, void *obj, size_t mem_type,
     size_t m;
     int i, j;
     void *ref, **ptr;
-    if(obj == NULL) return 0;
+    if(obj == nullptr) return 0;
     if(addr == 0) addr = (size_t)obj;
     if(max_level <= 0 || level <= max_level) {
         for(j = 0; j < level; j++) fputc('-', out);
@@ -1085,7 +1079,7 @@ static inline size_t mem_tree_obj(FILE *out, void *obj, size_t mem_type,
         if(mem_type == 3) {
             for(m = 0; m < cnt; m++) {
                 ptr = ((void **)obj) + m;
-                if(*ptr == NULL) continue;
+                if(*ptr == nullptr) continue;
                 addr += mem_size_round(desc->size);
             }
         }
@@ -1103,16 +1097,16 @@ static inline size_t mem_tree_obj(FILE *out, void *obj, size_t mem_type,
         }
         if(mem_type & 0x02) {
             ptr = ((void **)obj) + m;
-            if(*ptr == NULL) continue;
+            if(*ptr == nullptr) continue;
             ref = (void *)addr;
             addr += mem_size_round(desc->size);
         } else {
             ref = obj + m * desc->size;
         }
         for(i = 0; i < desc->n_child; i++) {
-            ptr = ref + desc->addr[i];
+            ptr =(void**)(ref + desc->addr[i]); /// TODO: bug?
             if(desc->mem_type[i] & 0x01) {
-                if(*ptr == NULL) continue;
+                if(*ptr == nullptr) continue;
                 if(max_cnt && m >= max_cnt) {
                     addr = mem_tree_obj(
                         out, (void *)addr,
@@ -1155,7 +1149,7 @@ static inline const obj_desc_t *mem_locate_obj(void *obj, size_t *_mem_type,
     u4i ns;
     int i, nc;
     void *ref, **ptr;
-    if(obj == NULL) return desc;
+    if(obj == nullptr) return desc;
     if(*addr == 0) *addr = (size_t)obj;
     if(selected && ntrace == 0) return desc;
     mem_type = *_mem_type;
@@ -1196,7 +1190,7 @@ static inline const obj_desc_t *mem_locate_obj(void *obj, size_t *_mem_type,
     for(m = 0; m < ns; m++) {
         if(mem_type & 0x02) {
             ptr = ((void **)obj) + m;
-            if(*ptr == NULL) {
+            if(*ptr == nullptr) {
                 if(selected && m + 1 == ns) {
                     *_mem_type = desc->mem_type[trace_childs[0]] |
                                  (desc->size ? 0 : MEM_PTR_TYPE_DUMP);
@@ -1211,10 +1205,10 @@ static inline const obj_desc_t *mem_locate_obj(void *obj, size_t *_mem_type,
         }
         nc = (selected && m + 1 == ns) ? trace_childs[0] + 1 : (u4i)desc->n_child;
         for(i = 0; i < nc; i++) {
-            ptr = ref + desc->addr[i];
+            ptr =(void**)( ref + desc->addr[i]);
             if(desc->mem_type[i] & 0x01) {
                 *_mem_type = desc->mem_type[i] | (desc->size ? 0 : MEM_PTR_TYPE_DUMP);
-                if(*ptr == NULL) {
+                if(*ptr == nullptr) {
                     *cnt = 0;
                     continue;
                 }
@@ -1237,7 +1231,7 @@ static inline const obj_desc_t *mem_locate_obj(void *obj, size_t *_mem_type,
 static inline size_t mem_dump_obj_file(void *obj, size_t mem_type, const obj_desc_t *desc,
                                        size_t cnt, size_t aux_data, FILE *out) {
     size_t size;
-    if(desc == NULL) return 0;
+    if(desc == nullptr) return 0;
     if((mem_type & 0x01) == 0) {
         fprintf(stderr,
                 " -- Illegal mem_type (%u) to call mem_dump, object should have "
@@ -1262,7 +1256,7 @@ static inline size_t mem_dump_free_obj_file(void *obj, size_t mem_type,
                                             const obj_desc_t *desc, size_t cnt,
                                             size_t aux_data, FILE *out) {
     size_t size;
-    if(desc == NULL) return 0;
+    if(desc == nullptr) return 0;
     if((mem_type & 0x01) == 0) {
         fprintf(stderr,
                 " -- Illegal mem_type (%u) to call mem_dump, object should have "
@@ -1283,7 +1277,7 @@ static inline size_t mem_dump_free_obj_file(void *obj, size_t mem_type,
     return size;
 }
 
-static char *mem_share_locks = NULL;
+static char *mem_share_locks = nullptr;
 static int mem_share_lock_size = 0;
 
 static inline void cleanup_mem_share_file_locks() {
@@ -1295,7 +1289,7 @@ static inline void cleanup_mem_share_file_locks() {
     }
     if(mem_share_locks) free(mem_share_locks);
     mem_share_lock_size = 0;
-    mem_share_locks = NULL;
+    mem_share_locks = nullptr;
 }
 
 #ifndef sighandler_t
@@ -1332,7 +1326,7 @@ static inline void register_mem_share_file_lock(char *file) {
         atexit(cleanup_mem_share_file_locks);
     }
     len = strlen(file);
-    mem_share_locks = realloc(mem_share_locks, mem_share_lock_size + len + 1);
+    mem_share_locks = (char*)realloc(mem_share_locks, mem_share_lock_size + len + 1);
     strcpy(mem_share_locks + mem_share_lock_size, file);
     mem_share_lock_size += len + 1;
 }
@@ -1341,34 +1335,34 @@ static inline void print_tree_obj_file(FILE *out, const obj_desc_t *desc, char *
                                        size_t max_cnt, int max_level) {
     FILE *file;
     void *mem;
-    size_t psize, *size, *mem_type, *cnt, *aux_data;
-    if(desc == NULL) return;
-    if((file = fopen(path, "r")) == NULL) {
+    size_t psize, size, mem_type, cnt, aux_data;
+    if(desc == nullptr) return;
+    if((file = fopen(path, "r")) == nullptr) {
         fprintf(stderr, " -- Cannot open %s in %s -- %s:%d --\n", path, __FUNCTION__,
                 __FILE__, __LINE__);
         fflush(stderr);
         return;
     }
-    size = alloca(sizeof(size_t));
-    mem_type = alloca(sizeof(size_t));
-    cnt = alloca(sizeof(size_t));
-    aux_data = alloca(sizeof(size_t));
-    fread(size, sizeof(size_t), 1, file);
-    fread(mem_type, sizeof(size_t), 1, file);
-    fread(cnt, sizeof(size_t), 1, file);
-    fread(aux_data, sizeof(size_t), 1, file);
+//    size = make_alloca(size_t);
+//    mem_type = make_alloca(size_t);
+//    cnt = make_alloca(size_t);
+//    aux_data = make_alloca(size_t);
+    fread(&size, sizeof(size_t), 1, file);
+    fread(&mem_type, sizeof(size_t), 1, file);
+    fread(&cnt, sizeof(size_t), 1, file);
+    fread(&aux_data, sizeof(size_t), 1, file);
     psize = getpagesize();
-    mem = mmap(0, (((*size) + 4 * sizeof(size_t)) + psize - 1) / psize * psize, PROT_READ,
+    mem = mmap(0, ((size + 4 * sizeof(size_t)) + psize - 1) / psize * psize, PROT_READ,
                MAP_PRIVATE, fileno(file), 0);
-    if(mem == NULL) {
+    if(mem == nullptr) {
         perror("Cannot mmap");
         return;
     }
     fprintf(out, "OBJ_TREE[%s]{\n", path);
-    mem_tree_obj(out, mem + 4 * sizeof(size_t), *mem_type, desc, 0, *cnt, max_cnt, 1,
+    mem_tree_obj(out, mem + 4 * sizeof(size_t), mem_type, desc, 0, cnt, max_cnt, 1,
                  max_level);
     fprintf(out, "}\n");
-    munmap(mem, (((*size) + 4 * sizeof(size_t)) + psize - 1) / psize * psize);
+    munmap(mem, ((size + 4 * sizeof(size_t)) + psize - 1) / psize * psize);
     fclose(file);
 }
 
@@ -1378,34 +1372,34 @@ static inline void *mem_read_obj_file(const obj_desc_t *desc, char *path, size_t
     void *mem;
     size_t nin;
     FILE *file;
-    if(desc == NULL) return NULL;
-    if((file = fopen(path, "r")) == NULL) {
+    if(desc == nullptr) return nullptr;
+    if((file = fopen(path, "r")) == nullptr) {
         fprintf(stderr, " -- Cannot open %s in %s -- %s:%d --\n", path, __FUNCTION__,
                 __FILE__, __LINE__);
         fflush(stderr);
-        return NULL;
+        return nullptr;
     }
-    if(size == NULL) size = alloca(sizeof(size_t));
-    if(mem_type == NULL) mem_type = alloca(sizeof(size_t));
-    if(cnt == NULL) cnt = alloca(sizeof(size_t));
-    if(aux_data == NULL) aux_data = alloca(sizeof(size_t));
+    if(size == nullptr) size = make_alloca(size_t);
+    if(mem_type == nullptr) mem_type = make_alloca(size_t);
+    if(cnt == nullptr) cnt = make_alloca(size_t);
+    if(aux_data == nullptr) aux_data = make_alloca(size_t);
     fread(size, sizeof(size_t), 1, file);
     fread(mem_type, sizeof(size_t), 1, file);
     fread(cnt, sizeof(size_t), 1, file);
     fread(aux_data, sizeof(size_t), 1, file);
     mem = malloc(*size);
-    if(mem == NULL) {
+    if(mem == nullptr) {
         fprintf(stderr, " -- Cannot alloc %llu bytes memory for %s in %s -- %s:%d --\n",
                 (unsigned long long)*size, path, __FUNCTION__, __FILE__, __LINE__);
         fflush(stderr);
-        return NULL;
+        return nullptr;
     }
     if((nin = fread_stepwise(mem, 1, *size, file)) != *size) {
         fprintf(stderr, " -- Read %llu bytes, not %llu bytes in %s -- %s:%d --\n",
                 (unsigned long long)nin, (unsigned long long)*size, __FUNCTION__,
                 __FILE__, __LINE__);
         fflush(stderr);
-        return NULL;
+        return nullptr;
     }
     fclose(file);
     mem_load_obj(mem, *aux_data, *mem_type, desc, 0, *cnt);
@@ -1421,17 +1415,17 @@ static inline void *mem_read_sub_obj_file(const obj_desc_t *desc, u4i *trace_chi
     void *mem;
     size_t *mem_type, *cnt, *aux_data, psize, addr, sz, nin;
     FILE *file;
-    if(desc == NULL) return NULL;
-    if((file = fopen(path, "r")) == NULL) {
+    if(desc == nullptr) return nullptr;
+    if((file = fopen(path, "r")) == nullptr) {
         fprintf(stderr, " -- Cannot open %s in %s -- %s:%d --\n", path, __FUNCTION__,
                 __FILE__, __LINE__);
         fflush(stderr);
         exit(1);
     }
-    if(size == NULL) size = alloca(sizeof(size_t));
-    mem_type = alloca(sizeof(size_t));
-    cnt = alloca(sizeof(size_t));
-    aux_data = alloca(sizeof(size_t));
+    if(size == nullptr) size = make_alloca(size_t);
+    mem_type = make_alloca(size_t);
+    cnt = make_alloca(size_t);
+    aux_data = make_alloca(size_t);
     fread(size, sizeof(size_t), 1, file);
     fread(mem_type, sizeof(size_t), 1, file);
     fread(cnt, sizeof(size_t), 1, file);
@@ -1439,9 +1433,9 @@ static inline void *mem_read_sub_obj_file(const obj_desc_t *desc, u4i *trace_chi
     psize = getpagesize();
     mem = mmap(0, (((*size) + 4 * sizeof(size_t)) + psize - 1) / psize * psize, PROT_READ,
                MAP_PRIVATE, fileno(file), 0);
-    if(mem == NULL) {
+    if(mem == nullptr) {
         perror("Cannot mmap");
-        return NULL;
+        return nullptr;
     }
     addr = 0;
     sub = mem_locate_obj(mem + 4 * sizeof(size_t), mem_type, desc, trace_childs,
@@ -1455,7 +1449,7 @@ static inline void *mem_read_sub_obj_file(const obj_desc_t *desc, u4i *trace_chi
                 (unsigned long long)nin, (unsigned long long)sz, __FUNCTION__, __FILE__,
                 __LINE__);
         fflush(stderr);
-        return NULL;
+        return nullptr;
     }
     fclose(file);
     mem_load_obj(mem, *aux_data, *mem_type, sub, 0, *cnt);
@@ -1469,24 +1463,24 @@ static inline void *mem_load_obj_file(const obj_desc_t *desc, char *_path, size_
                                       size_t *mem_type, size_t *cnt, size_t *aux_data) {
     void *mem;
     size_t sz, nin, psize, *msg;
-    char *lock, *shadow, *path, *shmp;
+    char *lock, *shadow;
     char hostname[65];
     FILE *file;
     int fd, ret;
-    if(desc == NULL) return NULL;
-    path = absolute_filename(_path);
-    shmp = strdup(path);
-    replace_char(shmp, '/', '_', 0);
-    if((file = fopen(path, "r+")) == NULL) {
-        fprintf(stderr, " -- Cannot open %s in %s -- %s:%d --\n", path, __FUNCTION__,
+    if(desc == nullptr) return nullptr;
+    auto path = absolute_filename(_path);
+    auto shmp = unique_C_ptr<char>(strdup(path.get()));
+    replace_char(shmp.get(), '/', '_', 0);
+    if((file = fopen(path.get(), "r+")) == nullptr) {
+        fprintf(stderr, " -- Cannot open %s in %s -- %s:%d --\n", path.get(), __FUNCTION__,
                 __FILE__, __LINE__);
         fflush(stderr);
         exit(1);
     }
-    if(size == NULL) size = alloca(sizeof(size_t));
-    if(mem_type == NULL) mem_type = alloca(sizeof(size_t));
-    if(cnt == NULL) cnt = alloca(sizeof(size_t));
-    if(aux_data == NULL) aux_data = alloca(sizeof(size_t));
+    if(size == nullptr) size = make_alloca(size_t);
+    if(mem_type == nullptr) mem_type = make_alloca(size_t);
+    if(cnt == nullptr) cnt = make_alloca(size_t);
+    if(aux_data == nullptr) aux_data = make_alloca(size_t);
     fread(size, sizeof(size_t), 1, file);
     fread(mem_type, sizeof(size_t), 1, file);
     fread(cnt, sizeof(size_t), 1, file);
@@ -1496,8 +1490,8 @@ static inline void *mem_load_obj_file(const obj_desc_t *desc, char *_path, size_
     //fd = fileno(file);
     //mem = mmap(0, (size + 4 * sizeof(size_t) + psize - 1) / psize * psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     gethostname(hostname, 64);
-    shadow = alloca(strlen(shmp) + strlen(hostname) + 40);
-    sprintf(shadow, "%s.mem_share.%s.%ld.shm", shmp, hostname, gethostid());
+    shadow = (char*)alloca(strlen(shmp.get()) + strlen(hostname) + 40);
+    sprintf(shadow, "%s.mem_share.%s.%ld.shm", shmp.get(), hostname, gethostid());
     fd = shm_open(shadow, O_CREAT | O_RDWR, 0777);
     if(fd == -1) {
         fprintf(stderr, " -- shm_open failed: %s in %s -- %s:%d --\n", shadow,
@@ -1517,7 +1511,7 @@ static inline void *mem_load_obj_file(const obj_desc_t *desc, char *_path, size_
                fd, 0);
     if(mem == MAP_FAILED) {
         perror("Cannot mmap");
-        return NULL;
+        return nullptr;
     }
     fseek(file, 0, SEEK_SET);
     if((nin = fread_stepwise(mem, 1, sz, file)) != sz) {
@@ -1528,12 +1522,12 @@ static inline void *mem_load_obj_file(const obj_desc_t *desc, char *_path, size_
         exit(1);
     }
     fclose(file);
-    fprintf(stderr, " -- Read %llu bytes from %s --\n", (unsigned long long)nin, path);
+    fprintf(stderr, " -- Read %llu bytes from %s --\n", (unsigned long long)nin, path.get());
     fflush(stderr);
     mem_load_obj(mem + 4 * sizeof(size_t), *aux_data, *mem_type, desc, 0, *cnt);
     //if(desc->post) desc->post(mem + 4 * sizeof(size_t), *aux_data);
-    lock = alloca(strlen(shmp) + strlen(hostname) + 20);
-    sprintf(lock, "%s.mem_share.%s.%ld", shmp, hostname, gethostid());
+    lock = (char*)alloca(strlen(shmp.get()) + strlen(hostname) + 20);
+    sprintf(lock, "%s.mem_share.%s.%ld", shmp.get(), hostname, gethostid());
     if((fd = shm_open(lock, O_CREAT | O_RDWR, 0777)) == -1) {
         fprintf(stderr, " -- shm_open failed: %s in %s -- %s:%d --\n", lock, __FUNCTION__,
                 __FILE__, __LINE__);
@@ -1546,44 +1540,40 @@ static inline void *mem_load_obj_file(const obj_desc_t *desc, char *_path, size_
         fflush(stderr);
         exit(1);
     }
-    msg = mmap(0, psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    msg = (size_t*)mmap(0, psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(msg == MAP_FAILED) {
         perror("Cannot mmap");
         exit(1);
     }
     msg[0] = (size_t)mem;
     msg[1] = *size;
-    fprintf(stderr, "-- mem_share '%s' at %p:%llu --\n", path, mem, (u8i)*size);
+    fprintf(stderr, "-- mem_share '%s' at %p:%llu --\n", path.get(), mem, (u8i)*size);
     fflush(stderr);
-    free(path);
-    free(shmp);
     //register_mem_share_file_lock(lock);
     return mem + 4 * sizeof(size_t);
 }
 
 static inline int mem_stop_obj_file(char *_path) {
-    char *lock, *shadow, *path, *shmp;
+    char *lock, *shadow;
     char hostname[65];
-    path = absolute_filename(_path);
-    shmp = strdup(path);
-    replace_char(shmp, '/', '_', 0);
+    auto path = absolute_filename(_path);
+    auto shmp = unique_C_ptr<char>(strdup(path.get()));
+    replace_char(shmp.get(), '/', '_', 0);
     gethostname(hostname, 64);
-    shadow = alloca(strlen(shmp) + strlen(hostname) + 40);
-    sprintf(shadow, "%s.mem_share.%s.%ld.shm", shmp, hostname, gethostid());
+    shadow = str_alloca(strlen(shmp.get()) + strlen(hostname) + 40);
+    sprintf(shadow, "%s.mem_share.%s.%ld.shm",  shmp.get(), hostname, gethostid());
     if(shm_unlink(shadow) == -1) {
         fprintf(stderr, " -- Failed to remove mmap object %s --\n", shadow);
         fflush(stderr);
         return 0;
     }
-    lock = alloca(strlen(shmp) + strlen(hostname) + 20);
-    sprintf(lock, "%s.mem_share.%s.%ld", shmp, hostname, gethostid());
+    lock = str_alloca(strlen(shmp.get()) + strlen(hostname) + 20);
+    sprintf(lock, "%s.mem_share.%s.%ld",  shmp.get(), hostname, gethostid());
     if(shm_unlink(lock) == -1) {
         fprintf(stderr, " -- Failed to remove mmap object %s --\n", lock);
         fflush(stderr);
         return 0;
     }
-    free(path);
-    free(shmp);
     return 1;
 }
 
@@ -1591,7 +1581,7 @@ static inline int mem_stop_obj_file(char *_path) {
 static inline void *mem_find_obj_file(const obj_desc_t *desc, char *_path, size_t *size,
                                       size_t *mem_type, size_t *cnt, size_t *aux_data,
                                       int wr) {
-    char *lock, *shadow, *path, *shmp;
+    char *lock, *shadow;
     char hostname[65];
     void *addr, *mem;
     size_t psize, *msg;
@@ -1599,28 +1589,28 @@ static inline void *mem_find_obj_file(const obj_desc_t *desc, char *_path, size_
     UNUSED(desc);
     gethostname(hostname, 64);
     psize = getpagesize();
-    path = absolute_filename(_path);
-    shmp = strdup(path);
-    replace_char(shmp, '/', '_', 0);
-    lock = alloca(strlen(shmp) + strlen(hostname) + 32);
-    sprintf(lock, "%s.mem_share.%s.%ld", shmp, hostname, gethostid());
-    if(size == NULL) size = alloca(sizeof(size_t));
-    if(mem_type == NULL) mem_type = alloca(sizeof(size_t));
-    if(cnt == NULL) cnt = alloca(sizeof(size_t));
-    if(aux_data == NULL) aux_data = alloca(sizeof(size_t));
+    auto path = absolute_filename(_path);
+    auto shmp = unique_C_ptr<char>(strdup(path.get()));
+    replace_char(shmp.get(), '/', '_', 0);
+    lock = str_alloca(strlen(shmp.get()) + strlen(hostname) + 32);
+    sprintf(lock, "%s.mem_share.%s.%ld",  shmp.get(), hostname, gethostid());
+    if(size == nullptr) size = make_alloca(size_t);
+    if(mem_type == nullptr) mem_type = make_alloca(size_t);
+    if(cnt == nullptr) cnt = make_alloca(size_t);
+    if(aux_data == nullptr) aux_data = make_alloca(size_t);
     if((fd = shm_open(lock, O_RDWR, 0777)) == -1) {
-        return NULL;
+        return nullptr;
     }
-    msg = mmap(0, psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    msg = (size_t*)mmap(0, psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(msg == MAP_FAILED) {
         perror("Cannot mmap");
-        return NULL;
+        return nullptr;
     }
     addr = (void *)msg[0];
     *size = msg[1];
     munmap(msg, psize);
-    shadow = alloca(strlen(shmp) + strlen(hostname) + 40);
-    sprintf(shadow, "%s.mem_share.%s.%ld.shm", shmp, hostname, gethostid());
+    shadow = str_alloca(strlen(shmp.get()) + strlen(hostname) + 40);
+    sprintf(shadow, "%s.mem_share.%s.%ld.shm",  shmp.get(), hostname, gethostid());
     fd = shm_open(shadow, O_RDWR, 0777);
     prot = PROT_READ;
     if(wr) prot |= PROT_WRITE;
@@ -1628,21 +1618,17 @@ static inline void *mem_find_obj_file(const obj_desc_t *desc, char *_path, size_
                MAP_SHARED | MAP_FIXED, fd, 0);
     if(mem == MAP_FAILED) {
         perror("Cannot map shared object");
-        return NULL;
+        return nullptr;
     }
     *mem_type = ((size_t *)addr)[1];
     *cnt = ((size_t *)addr)[2];
     *aux_data = ((size_t *)addr)[3];
     //fclose(file);
     //mem_load_obj(mem + 4 * sizeof(size_t), *mem_type, desc, 0, *cnt);
-    fprintf(stderr, "-- mem_map '%s' at %p:%llu --\n", path, addr, (u8i)*size);
+    fprintf(stderr, "-- mem_map '%s' at %p:%llu --\n",  path.get(), addr, (u8i)*size);
     fflush(stderr);
-    free(path);
-    free(shmp);
     return mem + 4 * sizeof(size_t);
 }
-
-#endif
 
 /*
  * An example to use mem_dump
@@ -1658,8 +1644,8 @@ typedef struct {
 } Type1;
 
 size_t type1_count(void *obj, int idx){ if(idx == 0){ return strlen(((Type1*)obj)->str) + 1; } else return 0; }
-//const obj_desc_t type1_obj_desc = {"TYPE1", sizeof(Type1), 1, {1}, {offsetof(Type1, str)}, {&OBJ_DESC_DATA}, type1_count, NULL};
-const obj_desc_t type1_obj_desc = {"TYPE1", sizeof(Type1), 1, {1}, {offsetof(Type1, str)}, {&OBJ_DESC_CHAR_ARRAY}, NULL, NULL};
+//const obj_desc_t type1_obj_desc = {"TYPE1", sizeof(Type1), 1, {1}, {offsetof(Type1, str)}, {&OBJ_DESC_DATA}, type1_count, nullptr};
+const obj_desc_t type1_obj_desc = {"TYPE1", sizeof(Type1), 1, {1}, {offsetof(Type1, str)}, {&OBJ_DESC_CHAR_ARRAY}, nullptr, nullptr};
 
 typedef struct {
 	int a, b, c;
@@ -1679,7 +1665,7 @@ size_t type2_count(void *obj, int idx){
 	}
 }
 
-const obj_desc_t type2_obj_desc = {"TYPE2", sizeof(Type2), 6, {0, 0, 1, 2, 3, 3}, {offsetof(Type2, d1), offsetof(Type2, d2), offsetof(Type2, d3), offsetof(Type2, d4), offsetof(Type2, d5), offsetof(Type2, strs)}, {&type1_obj_desc, &type1_obj_desc, &type1_obj_desc, &type1_obj_desc, &type1_obj_desc, &OBJ_DESC_CHAR_ARRAY}, type2_count, NULL};
+const obj_desc_t type2_obj_desc = {"TYPE2", sizeof(Type2), 6, {0, 0, 1, 2, 3, 3}, {offsetof(Type2, d1), offsetof(Type2, d2), offsetof(Type2, d3), offsetof(Type2, d4), offsetof(Type2, d5), offsetof(Type2, strs)}, {&type1_obj_desc, &type1_obj_desc, &type1_obj_desc, &type1_obj_desc, &type1_obj_desc, &OBJ_DESC_CHAR_ARRAY}, type2_count, nullptr};
 
 int main(){
 	Type2 *t2, *t3;

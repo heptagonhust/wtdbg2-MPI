@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-but-set-variable -mpopcnt -march=native")
+set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-but-set-variable -Wno-pointer-arith -mpopcnt -march=native")
 
 include_directories(include)
 add_subdirectory(ksw)

@@ -9,10 +9,10 @@ template <typename T>
 class unique_C_ptr: public std::unique_ptr<T[],free_deleter>{
   public:
     using std::unique_ptr<T[],free_deleter>::unique_ptr;
-    // operator T*(){
-    //     return c_ptr();
-
-    // }
+//    operator T*(){
+//         return this->get();
+//
+//    }
     void realloc(size_t new_size){
         auto ptr = this->release();
         ptr = (T*)::realloc(ptr, new_size);
@@ -33,3 +33,5 @@ auto make_calloc(size_t size) -> unique_C_ptr<T>{
     return unique_C_ptr<T>((T*)calloc(size, sizeof(T)));
 }
 
+#define make_alloca(type) (type*)alloca(sizeof(type))
+#define str_alloca(size) (char*)alloca(size)

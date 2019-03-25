@@ -46,7 +46,7 @@
                 (cap) =                                                                  \
                     (((size) + 1 + 0xFFFFFFFLLU - 1LLU) / 0xFFFFFFFLLU) * 0xFFFFFFFLLU;  \
             }                                                                            \
-            (ary) = realloc((ary), sizeof(e_type) * (cap));                              \
+            (ary) = (e_type*)realloc((ary), sizeof(e_type) * (cap));                              \
             if((ary) == NULL) {                                                          \
                 fprintf(stderr,                                                          \
                         " -- Out of memory, try to allocate %llu bytes in %s, -- %s:%d " \
@@ -251,7 +251,7 @@
         if((size_t)n == (size_t)list->cap) return;                                       \
         list->cap = n;                                                                   \
         if(list->size > n) list->size = n;                                               \
-        list->buffer = realloc(list->buffer - list->n_head,                              \
+        list->buffer = (e_type*)realloc(list->buffer - list->n_head,                              \
                                (list->cap + list->n_head) * sizeof(e_type)) +            \
                        list->n_head;                                                     \
     }                                                                                    \
@@ -279,7 +279,7 @@
                     list->cap += inc_size;                                               \
                 }                                                                        \
             }                                                                            \
-            list->buffer = realloc(list->buffer, list->cap * sizeof(e_type));            \
+            list->buffer = (e_type*)realloc(list->buffer, list->cap * sizeof(e_type));   \
         }                                                                                \
         memset(list->buffer + list->size, 0, n * sizeof(e_type));                        \
     }                                                                                    \
@@ -563,7 +563,7 @@
         size = mem_size_##list_type(list);                                               \
         clone.size = list->size;                                                         \
         clone.cap = list->size;                                                          \
-        clone.buffer = addr + (sizeof(list_type) + 7) / 8 * 8;                           \
+        clone.buffer = (e_type*)(addr + (sizeof(list_type) + 7) / 8 * 8);                           \
         fwrite(&clone, sizeof(list_type), 1, out);                                       \
         v = 0;                                                                           \
         for(i = (sizeof(list_type) + 7) / 8 * 8 - sizeof(list_type); i > 0; i--)         \
