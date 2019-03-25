@@ -433,17 +433,18 @@ static inline int exists_file(char *dir, char *filename) {
     return ret;
 }
 
-static inline FILE *open_file_for_read(char *name, char *suffix) {
-    char *full_name;
+static inline FILE *open_file_for_read(const char *name, char *suffix) {
+    const char *full_name;
     FILE *file;
     if(name == NULL && suffix == NULL) {
         full_name = "-";
     } else if(suffix == NULL) {
         full_name = name;
     } else {
-        full_name = (char *)alloca(strlen(name) + strlen(suffix) + 1);
-        memcpy(full_name, name, strlen(name));
-        memcpy(full_name + strlen(name), suffix, strlen(suffix) + 1);
+        char* tmp = (char *)alloca(strlen(name) + strlen(suffix) + 1);
+        memcpy(tmp, name, strlen(name));
+        memcpy(tmp + strlen(name), suffix, strlen(suffix) + 1);
+        full_name = tmp;
     }
     if(strcmp(full_name, "-") == 0) {
         file = stdin;
@@ -458,17 +459,18 @@ static inline FILE *open_file_for_read(char *name, char *suffix) {
     return file;
 }
 
-static inline FILE *open_file_for_write(char *name, char *suffix, int overwrite) {
-    char *full_name;
+static inline FILE *open_file_for_write(const char *name, const char *suffix, int overwrite) {
+    const char *full_name;
     FILE *file;
     if(name == NULL && suffix == NULL) {
         full_name = "-";
     } else if(suffix == NULL) {
         full_name = name;
     } else {
-        full_name = (char *)alloca(strlen(name) + strlen(suffix) + 1);
-        memcpy(full_name, name, strlen(name));
-        memcpy(full_name + strlen(name), suffix, strlen(suffix) + 1);
+        auto tmp = (char *)alloca(strlen(name) + strlen(suffix) + 1);
+        memcpy(tmp, name, strlen(name));
+        memcpy(tmp + strlen(name), suffix, strlen(suffix) + 1);
+        full_name = tmp;
     }
     if(strcmp(full_name, "-") == 0) {
         file = stdout;
@@ -486,17 +488,18 @@ static inline FILE *open_file_for_write(char *name, char *suffix, int overwrite)
     return file;
 }
 
-static inline FILE *open_file_for_append(char *name, char *suffix) {
-    char *full_name;
+static inline FILE *open_file_for_append(const char *name, char *suffix) {
+    const char *full_name;
     FILE *file;
     if(name == NULL && suffix == NULL) {
         full_name = "-";
     } else if(suffix == NULL) {
         full_name = name;
     } else {
-        full_name = (char *)alloca(strlen(name) + strlen(suffix) + 1);
-        memcpy(full_name, name, strlen(name));
-        memcpy(full_name + strlen(name), suffix, strlen(suffix) + 1);
+        auto tmp = (char *)alloca(strlen(name) + strlen(suffix) + 1);
+        memcpy(tmp, name, strlen(name));
+        memcpy(tmp + strlen(name), suffix, strlen(suffix) + 1);
+        full_name = tmp;
     }
     if(strcmp(full_name, "-") == 0) {
         file = stdout;

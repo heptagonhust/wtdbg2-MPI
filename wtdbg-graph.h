@@ -4067,8 +4067,8 @@ for(i = mlay->t_idx; i < mlay->path->size; i += mlay->n_cpu) {
 thread_end_loop(mlay);
 thread_end_func(mlay);
 
-static inline u8i print_ctgs_graph(Graph *g, u8i uid, u8i beg, u8i end, char *prefix,
-                                   char *lay_suffix, u4i ncpu, FILE *log) {
+static inline u8i print_ctgs_graph(Graph *g, u8i uid, u8i beg, u8i end, const char *prefix,
+                                   const char *lay_suffix, u4i ncpu, FILE *log) {
     FILE *o_lay;
     BufferedWriter *bw;
     layv *lays;
@@ -4694,8 +4694,8 @@ static inline u8i print_frgs_dot_graph(Graph *g, FILE *_out) {
 
 typedef u8i (*graph_print_func)(Graph *g, FILE *out);
 
-static inline u8i generic_print_graph(Graph *g, graph_print_func func, char *prefix,
-                                      char *suffix) {
+static inline u8i generic_print_graph(Graph *g, graph_print_func func, const char *prefix,
+                                      const char *suffix) {
     FILE *out;
     char *file;
     u8i cnt;

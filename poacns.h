@@ -293,14 +293,14 @@ static inline void print_dot_pog(POG *g, FILE *out) {
     fprintf(out, "}\n");
 }
 
-static inline void fprint_dot_pog(POG *g, char *prefix, char *suffix) {
+static inline void fprint_dot_pog(POG *g, const char *prefix, const char *suffix) {
     FILE *out;
     out = open_file_for_write(prefix, suffix, 1);
     print_dot_pog(g, out);
     fclose(out);
 }
 
-static inline void print_vstdot_pog(POG *g, char *fname) {
+static inline void print_vstdot_pog(POG *g, const char *fname) {
     FILE *out;
     pog_node_t *n;
     pog_edge_t *e;
@@ -324,7 +324,7 @@ static inline void print_vstdot_pog(POG *g, char *fname) {
     fclose(out);
 }
 
-static inline void print_seqs_pog(POG *g, char *prefix, char *suffix) {
+static inline void print_seqs_pog(POG *g, const char *prefix, const char *suffix) {
     FILE *out;
     u4i i;
     out = open_file_for_write(prefix, suffix, 1);

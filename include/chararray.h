@@ -200,7 +200,7 @@ static inline void trim_vstring(VString *str) {
     str->string += i;
 }
 
-static inline void append_string(String *str, char *src, string_size_t offlen) {
+static inline void append_string(String *str, const char *src, string_size_t offlen) {
     encap_string(str, offlen);
     memcpy(str->string + str->size, src, offlen);
     str->size += offlen;
