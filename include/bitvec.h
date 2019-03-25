@@ -62,31 +62,9 @@ typedef struct {
     int64_t iter_idx;
 } BitVec;
 
-#if 0
-
-static inline u4i count_ones_bit32(u4i v){
-	v = v - ((v >> 1) & 0x55555555U);                        // reuse input as temporary
-	v = (v & 0x33333333U) + ((v >> 2) & 0x33333333U);        // temp
-	return (((v + (v >> 4)) & 0xF0F0F0FU) * 0x1010101U) >> 24; // count
-}
-
-#define ONES_STEP_4 0x1111111111111111ULL
-#define ONES_STEP_8 0x0101010101010101ULL
-
-static inline int count_ones_bit64(const u8i x){
-	register u8i byte_sums = x - ((x & 0xa * ONES_STEP_4) >> 1);
-	byte_sums = (byte_sums & 3 * ONES_STEP_4) + ((byte_sums >> 2) & 3 * ONES_STEP_4);
-	byte_sums = (byte_sums + (byte_sums >> 4)) & 0x0f * ONES_STEP_8;
-	return byte_sums * ONES_STEP_8 >> 56;
-}
-
-#else
 
 #define count_ones_bit32(v) __builtin_popcount(v)
 #define count_ones_bit64(v) __builtin_popcountll(v)
-
-#endif
-
 #define reverse_u1i(v) (((((u1i)v) * 0x0202020202ULL) & 0x010884422010ULL) % 1023)
 
 static inline size_t bitvec_obj_desc_cnt(void *bitv, int idx) {
