@@ -19,6 +19,7 @@
 
 #include "wtdbg.h"
 #include "wtdbg-graph.h"
+#include "kbm_defines.h"
 #include <getopt.h>
 #include <regex.h>
 
