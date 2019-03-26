@@ -67,8 +67,6 @@ typedef struct {
     char *tag;
 } kbm_read_t;
 define_list(kbmreadv, kbm_read_t);
-
-
 extern const obj_desc_t kbm_read_t_obj_desc;
 
 static inline size_t kbmreadv_deep_obj_desc_cnt(void *list, int idx) {
@@ -346,6 +344,8 @@ static inline KBMPar *init_kbmpar() {
 static inline void free_kbmpar(KBMPar *par) {
     free(par);
 }
+
+#include "kbm_map.h"
 
 static inline KBM *init_kbm(KBMPar *par) {
     KBM *kbm;
@@ -2268,6 +2268,7 @@ static inline void push_kmer_match_kbm(KBMAux *aux, int dir, kbm_dpe_t *p) {
     dp->km_len = aux->par->ksize + aux->par->psize;
 }
 
+
 // KBM's tag2idx is wrongly loaded, need to be corrected
 static inline void rebuild_tag2idx_kbm(void *_kbm, size_t aux) {
     KBM *kbm;
@@ -2346,7 +2347,5 @@ FAILED:
     dst_cigars->size = dst->cgoff;
     return 0;
 }
-
-#include "kbm_map.h"
 
 #endif
