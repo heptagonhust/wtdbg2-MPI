@@ -544,7 +544,7 @@ static inline uint32_t *push_cigar(int *n_cigar, int *m_cigar, uint32_t *cigar, 
     if(*n_cigar == 0 || op != (int)(cigar[(*n_cigar) - 1] & 0xf)) {
         if(*n_cigar == *m_cigar) {
             *m_cigar = *m_cigar ? (*m_cigar) << 1 : 4;
-            cigar = realloc(cigar, (*m_cigar) << 2);
+            cigar = (uint32_t*) realloc(cigar, (*m_cigar) << 2);
         }
         cigar[(*n_cigar)++] = len << 4 | op;
     } else

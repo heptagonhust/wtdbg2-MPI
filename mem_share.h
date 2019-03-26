@@ -234,7 +234,7 @@ static inline size_t encap_list(void **buffer, size_t e_size, size_t size, size_
     } else {
         cap = (size + inc + 0x3FFFFFFFLLU) & (MAX_U8 << 30);
     }
-    ptr = realloc((*buffer) - n_head * e_size, e_size * (cap + n_head));
+    ptr =(void*)realloc((*buffer) - n_head * e_size, e_size * (cap + n_head));
     if(ptr == NULL) {
         fprintf(stderr,
                 " -- Out of memory, try to allocate %llu bytes, old size %llu, old addr "
@@ -1325,7 +1325,7 @@ static inline void register_mem_share_file_lock(char *file) {
         atexit(cleanup_mem_share_file_locks);
     }
     len = strlen(file);
-    mem_share_locks = realloc(mem_share_locks, mem_share_lock_size + len + 1);
+    mem_share_locks =(char*)realloc(mem_share_locks, mem_share_lock_size + len + 1);
     strcpy(mem_share_locks + mem_share_lock_size, file);
     mem_share_lock_size += len + 1;
 }

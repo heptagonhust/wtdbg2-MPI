@@ -563,7 +563,7 @@
         size = mem_size_##list_type(list);                                               \
         clone.size = list->size;                                                         \
         clone.cap = list->size;                                                          \
-        clone.buffer = addr + (sizeof(list_type) + 7) / 8 * 8;                           \
+        clone.buffer = (e_type*)(addr + (sizeof(list_type) + 7) / 8 * 8);                           \
         fwrite(&clone, sizeof(list_type), 1, out);                                       \
         v = 0;                                                                           \
         for(i = (sizeof(list_type) + 7) / 8 * 8 - sizeof(list_type); i > 0; i--)         \
