@@ -251,7 +251,7 @@
         if((size_t)n == (size_t)list->cap) return;                                       \
         list->cap = n;                                                                   \
         if(list->size > n) list->size = n;                                               \
-        list->buffer = realloc(list->buffer - list->n_head,                              \
+        list->buffer = (e_type*)realloc(list->buffer - list->n_head,                              \
                                (list->cap + list->n_head) * sizeof(e_type)) +            \
                        list->n_head;                                                     \
     }                                                                                    \
