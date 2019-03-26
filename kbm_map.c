@@ -4,25 +4,20 @@ const obj_desc_t kbm_read_t_obj_desc = {
     {offsetof(kbm_read_t, tag)}, {&OBJ_DESC_CHAR_ARRAY}, NULL, NULL};
 
 void map_kbm(KBMAux *aux) {
-    KBM *kbm;
-    kbm_ref_t *ref;
-    kbm_baux_t *saux;
-    u4v *heap;
-    u4i idx, hidx, i, j, pdir;
-    kbm = aux->kbm;
 #ifdef TEST_MODE
     if(aux->par->test_mode >= 4) return;
 #endif
+    KBM *kbm = aux->kbm;
     while(aux->hptr < aux->bmlen) {
         if(aux->hptr - aux->bmoff >= aux->nheap) {
             aux->bmoff += aux->nheap;
-            for(i = 0; i < aux->nheap; i++) {
+            for(int i = 0; i < aux->nheap; i++) {
                 clear_u4v(aux->heaps[i]);
             }
-            for(i = 0; i < aux->refs->size; i++) {
-                ref = ref_kbmrefv(aux->refs, i);
+            for(int i = 0; i < aux->refs->size; i++) {
+                kbm_ref_t *ref = ref_kbmrefv(aux->refs, i);
                 while(ref->boff < ref->bend) {
-                    hidx = ref->bidx / aux->bmcnt;
+                    int hidx = ref->bidx / aux->bmcnt;
                     if(hidx - aux->bmoff < aux->nheap) {
                         push_u4v(aux->heaps[hidx - aux->bmoff], i);
                     }
@@ -30,16 +25,16 @@ void map_kbm(KBMAux *aux) {
                 }
             }
         }
-        heap = aux->heaps[aux->hptr - aux->bmoff];
+        u4v* heap = aux->heaps[aux->hptr - aux->bmoff];
         if(heap->size) {
             clear_kbmdpev(aux->caches[0]);
             clear_kbmdpev(aux->caches[1]);
-            for(i = 0; i < heap->size; i++) {
-                idx = heap->buffer[i];
-                ref = ref_kbmrefv(aux->refs, idx);
+            for(int i = 0; i < heap->size; i++) {
+                int idx = heap->buffer[i];
+                kbm_ref_t* ref = ref_kbmrefv(aux->refs, idx);
                 while(1) {
-                    saux = ref_kbmbauxv(kbm->sauxs, ref->boff);
-                    pdir = (ref->dir ^ saux->dir);
+                    kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, ref->boff);
+                    int pdir = (ref->dir ^ saux->dir);
                     if(((aux->par->strand_mask >> pdir) & 0x01)) {
                         push_kbmdpev(
                             aux->caches[pdir],
@@ -56,7 +51,7 @@ void map_kbm(KBMAux *aux) {
                         abort();
                     }
 #endif
-                    hidx = ref->bidx / aux->bmcnt;
+                    int hidx = ref->bidx / aux->bmcnt;
                     if(hidx > aux->hptr) {
                         if(hidx - aux->bmoff < aux->nheap) {
                             push_u4v(aux->heaps[hidx - aux->bmoff], idx);
@@ -92,8 +87,8 @@ void map_kbm(KBMAux *aux) {
 #ifdef TEST_MODE
                 if(aux->par->test_mode <= 1) {
 #endif
-                    for(i = 0; i < 2; i++) {
-                        for(j = 0; j < aux->caches[i]->size; j++) {
+                    for(int i = 0; i < 2; i++) {
+                        for(int j = 0; j < aux->caches[i]->size; j++) {
 #if __DEBUG__
                             if(KBM_LOG >= KBM_LOG_ALL) {
                                 //fprintf(KBM_LOGF, "KBMLOG%d\t%d\t%d\t%c\t%d\t%llu[%d,%d]\t%llu[%d,%d]\n", __LINE__, aux->qidx, ref->poffs[ref->pdir], "+-"[ref->pdir], aux->hptr, ref->bidx, aux->kbm->bins->buffer[ref->bidx].ridx, aux->kbm->bins->buffer[ref->bidx].off * KBM_BIN_SIZE, (u8i)e->bidx, aux->kbm->bins->buffer[e->bidx].ridx, e->poff);
