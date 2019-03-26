@@ -145,7 +145,7 @@ static inline char *catstr(string_size_t n_str, ...) {
         s = va_arg(params, char *);
         if(s == NULL) continue;
         inc = strlen(s);
-        str = realloc(str, len + inc + 1);
+        str = (char*)realloc(str, len + inc + 1);
         memcpy(str + len, s, inc + 1);
         len += inc;
     }

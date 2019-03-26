@@ -125,7 +125,7 @@ static inline int encap_bitsvec(BitsVec *vec, u8i n) {
     } else {
         vec->cap = (vec->size + n + 0x3FFFFFFFLLU) & (MAX_U8 << 30);
     }
-    vec->bits = realloc(vec->bits, (vec->cap * vec->n_bit + 15) / 8);
+    vec->bits = (uint8_t*)realloc(vec->bits, (vec->cap * vec->n_bit + 15) / 8);
     return 1;
 }
 
