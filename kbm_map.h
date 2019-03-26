@@ -1,2 +1,4 @@
+#pragma once
+#include "common.h"
 #include "kbm.h"
-void map_kbm(KBMAux *aux);
+EXTERN_C void map_kbm(KBMAux *aux);
