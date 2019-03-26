@@ -126,12 +126,12 @@ define_list(kbmkmerv, kbm_kmer_t);
 define_hashtable(kbmhash, kbm_kmer_t, KBM_KMERCODE, KBM_KMEREQUALS, u8i, ITSELF,
                  KBM_KEYEQUALS, kbm_kmer_t *, ITSELF);
 
-typedef struct {
+typedef struct kbm_kaux_t{
     u8i off : 40, cnt : 24;
 } kbm_kaux_t;
 define_list(kbmkauxv, kbm_kaux_t);
 
-typedef struct {
+typedef struct kbm_ref_t{
     kbm_kmer_t *mer;
     kbm_kaux_t *aux;
     u4i kidx;
