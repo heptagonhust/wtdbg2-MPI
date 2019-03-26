@@ -4,7 +4,7 @@
 #include <iostream>
 #include <glog/logging.h>
 
-auto fake_init = []() {
+volatile auto fake_init = []() {
     google::InitGoogleLogging("./wtdbg");
     return 0;
 }();
@@ -21,15 +21,15 @@ void map_kbm(KBMAux *aux) {
 #ifdef TEST_MODE
     if(aux->par->test_mode >= 4) return;
 #endif
-    fake_init++;
     KBM *kbm = aux->kbm;
+    LOG(INFO) << "hptr" << aux->hptr << "bmlem" << aux->bmlen;
     while(aux->hptr < aux->bmlen) {
-        LOG(INFO) << "hptr" << aux->hptr << "bmlem" << aux->bmlen;
         if(aux->hptr - aux->bmoff >= aux->nheap) {
             aux->bmoff += aux->nheap;
             for(int i = 0; i < aux->nheap; i++) {
                 clear_u4v(aux->heaps[i]);
             }
+            // for each aux->refs
             for(int i = 0; i < aux->refs->size; i++) {
                 kbm_ref_t *ref = ref_kbmrefv(aux->refs, i);
                 while(ref->boff < ref->bend) {
