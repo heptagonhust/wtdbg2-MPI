@@ -1539,7 +1539,7 @@ static inline void *mem_load_obj_file(const obj_desc_t *desc, char *_path, size_
         fflush(stderr);
         exit(1);
     }
-    msg = mmap(0, psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    msg = (size_t*)mmap(0, psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(msg == MAP_FAILED) {
         perror("Cannot mmap");
         exit(1);
@@ -1604,7 +1604,7 @@ static inline void *mem_find_obj_file(const obj_desc_t *desc, char *_path, size_
     if((fd = shm_open(lock, O_RDWR, 0777)) == -1) {
         return NULL;
     }
-    msg = mmap(0, psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    msg = (size_t*)mmap(0, psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(msg == MAP_FAILED) {
         perror("Cannot mmap");
         return NULL;
