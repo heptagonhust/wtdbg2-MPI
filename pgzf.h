@@ -538,7 +538,7 @@ static inline PGZF *open_pgzf_writer(FILE *out, u4i buffer_size, int ncpu, int l
     u4i i;
     b8i offset;
     thread_prepare(pgz);
-    pz = malloc(sizeof(PGZF));
+    pz = (PGZF*)malloc(sizeof(PGZF));
     if(ncpu < 1) {
         get_linux_sys_info(NULL, NULL, &ncpu);
         if(ncpu < 1) ncpu = 8;
@@ -565,11 +565,11 @@ static inline PGZF *open_pgzf_writer(FILE *out, u4i buffer_size, int ncpu, int l
     pz->boffs = init_u8v(32);
     pz->xoffs = init_u8v(32);
     pz->z = NULL;
-    pz->dsts = calloc(pz->ncpu, sizeof(u1v *));
+    pz->dsts = (u1v **)calloc(pz->ncpu, sizeof(u1v *));
     for(i = 0; i < pz->ncpu; i++) {
         pz->dsts[i] = init_u1v(pz->bufsize);
     }
-    pz->srcs = calloc(pz->ncpu, sizeof(u1v *));
+    pz->srcs = (u1v **)calloc(pz->ncpu, sizeof(u1v *));
     for(i = 0; i < pz->ncpu; i++) {
         pz->srcs[i] = init_u1v(pz->bufsize);
     }
@@ -687,7 +687,7 @@ static inline PGZF *open_pgzf_reader(FILE *in, u4i bufsize, int ncpu) {
     u4i i, zsval, hoff;
     int ftype;
     thread_prepare(pgz);
-    pz = malloc(sizeof(PGZF));
+    pz = (PGZF*)malloc(sizeof(PGZF));
     pz->ncpu = ncpu;
     pz->ridx = 0;
     pz->widx = 0;
@@ -703,8 +703,8 @@ static inline PGZF *open_pgzf_reader(FILE *in, u4i bufsize, int ncpu) {
     pz->eof = 0;
     pz->error = 0;
     pz->step = 0;
-    pz->dsts = calloc(pz->ncpu, sizeof(u1v *));
-    pz->srcs = calloc(pz->ncpu, sizeof(u1v *));
+    pz->dsts = (u1v **)calloc(pz->ncpu, sizeof(u1v *));
+    pz->srcs = (u1v **)calloc(pz->ncpu, sizeof(u1v *));
     pz->tmp = init_u1v(32);
     pz->tot_in = 0;
     pz->tot_out = 0;
@@ -756,7 +756,7 @@ static inline PGZF *open_pgzf_reader(FILE *in, u4i bufsize, int ncpu) {
             pz->bufsize = bufsize;
         }
     } else if(pz->rw_mode == PGZF_MODE_R_GZ) {
-        pz->z = calloc(1, sizeof(z_stream));
+        pz->z = (z_stream*)calloc(1, sizeof(z_stream));
         inflateInit2(pz->z, -15);
         pz->bufsize = bufsize;
     } else {

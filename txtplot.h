@@ -28,7 +28,7 @@ static inline char *barplot_txt_u4_simple(u4i w, u4i h, u4i *vals, u4i size,
     double hdiv;
     u4i wdiv;
     u4i i, j, x, y;
-    g = malloc((w + 1) * h + 1);
+    g = (char*)malloc((w + 1) * h + 1);
     memset(g, ' ', (w + 1) * h);
     for(i = 1; i <= h; i++) {
         g[(w + 1) * i - 1] = '\n';
@@ -60,7 +60,7 @@ static inline char *barplot_txt_u8_simple(u4i w, u4i h, u8i *vals, u4i size,
     double hdiv;
     u8i wdiv;
     u4i i, j, x, y;
-    g = malloc((w + 1) * h + 1);
+    g = (char*)malloc((w + 1) * h + 1);
     memset(g, ' ', (w + 1) * h);
     for(i = 1; i <= h; i++) {
         g[(w + 1) * i - 1] = '\n';

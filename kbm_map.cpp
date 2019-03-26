@@ -1,4 +1,4 @@
-#include "kbm.h"
+#include "kbm_defines.h"
 const obj_desc_t kbm_read_t_obj_desc = {
     "kbm_read_t_obj_desc",       sizeof(kbm_read_t),     1,    {1},
     {offsetof(kbm_read_t, tag)}, {&OBJ_DESC_CHAR_ARRAY}, NULL, NULL};

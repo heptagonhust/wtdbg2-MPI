@@ -407,9 +407,9 @@ static inline uint64_t _rj_hashset_find_prime(uint64_t n) {
         set->size = sz;                                                             \
         set->load_factor = load_factor;                                             \
         set->ocp = set->count;                                                      \
-        set->array = realloc(set->array, (set->count + 1) * sizeof(hash_ele_type)); \
+        set->array = (hash_ele_type*)realloc(set->array, (set->count + 1) * sizeof(hash_ele_type)); \
         memset(set->array + set->count, 0, sizeof(hash_ele_type));                  \
-        hvs = malloc(set->count * sizeof(size_t));                                  \
+        hvs = (size_t*)malloc(set->count * sizeof(size_t));                                  \
         for(i = 0; i < set->count; i++) {                                           \
             hvs[i] = hash_code_macro(set->array[i]) % sz;                           \
         }                                                                           \

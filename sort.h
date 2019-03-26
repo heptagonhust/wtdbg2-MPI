@@ -629,8 +629,8 @@
         int *flags, i, min;                                                           \
         size_t ret;                                                                   \
         ret = 0;                                                                      \
-        es = malloc(sizeof(e_type) * n);                                              \
-        flags = malloc(sizeof(int) * n);                                              \
+        es = (e_type*)malloc(sizeof(e_type) * n);                                              \
+        flags = (int*)malloc(sizeof(int) * n);                                              \
         for(i = 0; i < n; i++) flags[i] = 0;                                          \
         while(1) {                                                                    \
             min = -1;                                                                 \

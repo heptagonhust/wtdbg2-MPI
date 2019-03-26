@@ -158,7 +158,7 @@ typedef struct {
 
 static inline GEGraph *init_gegraph() {
     GEGraph *g;
-    g = malloc(sizeof(GEGraph));
+    g = (GEGraph*)malloc(sizeof(GEGraph));
     g->nodes = init_genodev(32);
     g->edges = init_geedgev(32);
     g->ehash = init_geedgehash(1023);

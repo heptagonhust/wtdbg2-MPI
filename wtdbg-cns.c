@@ -60,7 +60,7 @@ int qb, qe, tb, te;
 mem_cache = init_u8list(1024);
 cigars[0] = mcns->cigars;
 cigars[1] = NULL;
-xs[0] = malloc(sizeof(kswx_t));
+xs[0] = (kswx_t*)malloc(sizeof(kswx_t));
 xs[1] = NULL;
 cns = mcns->cns;
 dag = init_dagcns(mcns->W, mcns->M, mcns->X, mcns->I, mcns->D, mcns->E, mcns->pM,

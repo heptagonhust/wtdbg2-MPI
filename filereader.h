@@ -103,7 +103,7 @@ typedef struct {
 
 static inline BioSequence *init_biosequence() {
     BioSequence *seq;
-    seq = malloc(sizeof(BioSequence));
+    seq = (BioSequence*)malloc(sizeof(BioSequence));
     seq->tag = init_string(32);
     seq->seq = init_string(32);
     seq->dsc = init_string(32);
@@ -211,7 +211,7 @@ static inline void *file_src_thread_func(void *obj) {
 
 static inline FileReader *init_filereader() {
     FileReader *fr;
-    fr = malloc(sizeof(FileReader));
+    fr = (FileReader*)malloc(sizeof(FileReader));
     fr->files = init_filesrcv(4);
     fr->fidx = 0;
     fr->bufmax = 128 * 1024;
@@ -226,8 +226,8 @@ static inline FileReader *init_filereader() {
 #else
     pthread_mutex_init(&fr->lock, NULL);
 #endif
-    fr->buffer[0] = malloc(fr->bufmax);
-    fr->buffer[1] = malloc(fr->bufmax);
+    fr->buffer[0] = (char*)malloc(fr->bufmax);
+    fr->buffer[1] = (char*)malloc(fr->bufmax);
     fr->line_breaker = '\n';
     fr->delimiter = '\t';
     fr->n_char = 0;
@@ -320,11 +320,11 @@ static inline int push_filereader(FileReader *fr, char *filename) {
         f->filename = NULL;
         f->file_attr = FILEREADER_ATTR_STDIN;
     } else if(filename[len - 1] == '|') {
-        f->filename = malloc(len);
+        f->filename = (char*)malloc(len);
         strncpy(f->filename, filename, len - 1);
         f->file_attr = FILEREADER_ATTR_PROC;
     } else if(len > 3 && strcmp(filename + len - 3, ".gz") == 0) {
-        //f->filename = malloc(len + 20);
+        //f->filename = (char*)malloc(len + 20);
         //sprintf(f->filename, "gzip -dc %s", filename);
         //f->file_attr = FILEREADER_ATTR_PROC;
         f->filename = strdup(filename);

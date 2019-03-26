@@ -127,13 +127,13 @@ typedef struct {
 
 static inline POG *init_pog(POGPar par) {
     POG *g;
-    g = malloc(sizeof(POG));
+    g = (POG*)malloc(sizeof(POG));
     g->seqs = init_seqbank();
     g->sbegs = init_u2v(32);
     g->sends = init_u2v(32);
     g->nodes = init_pognodev(16 * 1024);
     g->edges = init_pogedgev(16 * 1024);
-    g->par = malloc(sizeof(POGPar));
+    g->par = (POGPar*)malloc(sizeof(POGPar));
     memcpy(g->par, &par, sizeof(POGPar));
     g->qprof = init_b2v(4 * 1024);
     g->rows = init_b2v(16 * 1024);
@@ -340,7 +340,7 @@ static inline void print_msa_pog(POG *g, FILE *out) {
     char *str;
     u1i *cns;
     u4i i, j, b, e, c, n;
-    str = malloc(g->msa_len + 1);
+    str = (char*)malloc(g->msa_len + 1);
     fprintf(out, "[POS] ");
     for(i = j = 0; i < g->msa_len; i++) {
         if((i % 10) == 0) {
@@ -2103,7 +2103,7 @@ static inline void gen_cns_pog(POG *g) {
         tot = 0;
         clear_and_encap_u4v(g->btxs, mcnt + 1);
         hcnts = g->btxs->buffer;
-        //hcnts = alloca((mcnt + 1) * sizeof(u4i));
+        //hcnts = (u4i*)alloca((mcnt + 1) * sizeof(u4i));
         memset(hcnts, 0, (mcnt + 1) * sizeof(u4i));
         for(i = 0; i < g->msa_len; i++) {
             tot += (hcovs[i] + 1) * (hcovs[i]) / 2;

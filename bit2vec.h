@@ -34,7 +34,7 @@ typedef struct {
 
 static inline Bit2Vec *init_bit2vec(uint64_t size) {
     Bit2Vec *vec;
-    vec = malloc(sizeof(Bit2Vec));
+    vec = (Bit2Vec*)malloc(sizeof(Bit2Vec));
     vec->size = 0;
     vec->cap = size;
     vec->bits = calloc(1, (size * 2 + 7) / 8);

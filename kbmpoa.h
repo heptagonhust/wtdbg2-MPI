@@ -37,7 +37,7 @@ typedef struct {
 
 static inline KBMBlock *init_kbmblock(u2i bsize, u2i bstep) {
     KBMBlock *kb;
-    kb = malloc(sizeof(KBMBlock));
+    kb = (KBMBlock*)malloc(sizeof(KBMBlock));
     kb->rdtag = init_string(1024);
     kb->rdseq = NULL;
     kb->rdoff = 0;

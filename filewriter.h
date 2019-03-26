@@ -116,7 +116,7 @@ static inline BufferedWriter *open2_bufferedwriter(void *obj, write_data_func _w
                                                    close_output_func _close,
                                                    size_t buf_size) {
     BufferedWriter *bw;
-    bw = malloc(sizeof(BufferedWriter));
+    bw = (BufferedWriter*)malloc(sizeof(BufferedWriter));
     bw->_file = obj;
     bw->_write = _write;
     bw->_close = _close;

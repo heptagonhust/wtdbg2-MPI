@@ -1,7 +1,7 @@
 #include "kbm.h"
 KBMPar *init_kbmpar() {
     KBMPar *par;
-    par = malloc(sizeof(KBMPar));
+    par = (KBMPar*)malloc(sizeof(KBMPar));
     par->rd_len_order = 0;
     par->use_kf = 0;
     par->min_bin_degree = 2;
@@ -39,7 +39,7 @@ void free_kbmpar(KBMPar *par) {
 KBM *init_kbm(KBMPar *par) {
     KBM *kbm;
     u4i i;
-    kbm = malloc(sizeof(KBM));
+    kbm = (KBM*)malloc(sizeof(KBM));
     kbm->flags = 0;
     kbm->par = par;
     kbm->rdseqs = init_basebank();
@@ -134,7 +134,7 @@ void push_kbm(KBM *kbm, char *tag, int taglen, char *seq, u4i seqlen) {
     kbm_read_t *rd;
     char *ptr;
     if(taglen) {
-        ptr = malloc(taglen + 1);
+        ptr = (char*)malloc(taglen + 1);
         memcpy(ptr, tag, taglen);
         ptr[taglen] = 0;
     } else {
@@ -158,7 +158,7 @@ void bitpush_kbm(KBM *kbm, char *tag, int taglen, u8i *seqs, u8i seqoff,        
     kbm_read_t *rd;
     char *ptr;
     if(taglen) {
-        ptr = malloc(taglen + 1);
+        ptr = (char*)malloc(taglen + 1);
         memcpy(ptr, tag, taglen);
         ptr[taglen] = 0;
     } else {
@@ -437,7 +437,7 @@ ncpu = midx->n_cpu;
 tidx = midx->t_idx;
 kmers[0] = adv_init_kmeroffv(64, 0, 1);
 kmers[1] = adv_init_kmeroffv(64, 0, 1);
-kidxs = malloc(KBM_N_HASH * sizeof(kbmmidxv *));
+kidxs = (kbmmidxv **)malloc(KBM_N_HASH * sizeof(kbmmidxv *));
 for(i = 0; i < KBM_N_HASH; i++) kidxs[i] = init_kbmmidxv(64);
 bms = init_tmpbmerv(KBM_MAX_KCNT);
 thread_beg_loop(midx);
@@ -719,7 +719,7 @@ void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat) {
     //}
     //if(kbm->par->kmin <= 1) kbm->par->use_kf = 0;
     //kbm->kfs = kbm->par->use_kf? calloc(KBM_KF_SIZE / 4 / 8, 8) : NULL;
-    hash_locks = calloc(KBM_N_HASH, sizeof(pthread_mutex_t));
+    hash_locks = (pthread_mutex_t*)calloc(KBM_N_HASH, sizeof(pthread_mutex_t));
     thread_beg_init(midx, ncpu);
     midx->kbm = kbm;
     midx->beg = beg;
@@ -739,9 +739,9 @@ void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat) {
         fprintf(KBM_LOGF, "\r%llu bins\n", end - beg);
         fflush(KBM_LOGF);
     }
-    kcnts = calloc(MAX, sizeof(u8i));
+    kcnts = (u8i*)calloc(MAX, sizeof(u8i));
     thread_beg_iter(midx);
-    midx->cnts = calloc(MAX, sizeof(u8i));
+    midx->cnts = (u8i*)calloc(MAX, sizeof(u8i));
     midx->task = 3;    // counting raw kmers
     thread_wake(midx);
     thread_end_iter(midx);
@@ -761,7 +761,7 @@ void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat) {
     }
     if(kmstat) {
         u8i *_kcnts;
-        _kcnts = malloc(200 * sizeof(u8i));
+        _kcnts = (u8i*)malloc(200 * sizeof(u8i));
         for(i = 0; i < 200; i++) {
             _kcnts[i] = (i + 1) * kcnts[i];
         }
@@ -1057,7 +1057,7 @@ void simple_index_kbm(KBM *kbm, u8i beg, u8i end) {
 
 KBMDP *init_kbmdp() {
     KBMDP *dp;
-    dp = malloc(sizeof(KBMDP));
+    dp = (KBMDP*)malloc(sizeof(KBMDP));
     dp->kms = init_kbmdpev(1024);
     dp->km_len = 0;
     dp->cmask = init_bitvec(1024);
@@ -1119,7 +1119,7 @@ void free_kbmdp(KBMDP *dp) {
 
 KBMAux *init_kbmaux(KBM *kbm) {
     KBMAux *aux;
-    aux = malloc(sizeof(KBMAux));
+    aux = (KBMAux*)malloc(sizeof(KBMAux));
     aux->kbm = kbm;
     aux->par = kbm->par;
     aux->qtag = NULL;
@@ -1137,7 +1137,7 @@ KBMAux *init_kbmaux(KBM *kbm) {
     aux->refs = init_kbmrefv(64);
     aux->rank = init_u4v(64);
     aux->nheap = 1024;
-    aux->heaps = malloc((aux->nheap + 1) * sizeof(u4v *));
+    aux->heaps = (u4v **)malloc((aux->nheap + 1) * sizeof(u4v *));
     {
         u4i i;
         for(i = 0; i <= aux->nheap; i++) {

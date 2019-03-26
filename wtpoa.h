@@ -202,7 +202,7 @@ static inline CTGCNS *init_ctgcns(void *obj, iter_cns_block itercns,
                                   int reglen, POGPar *par) {
     CTGCNS *cc;
     thread_prepare(mcns);
-    cc = malloc(sizeof(CTGCNS));
+    cc = (CTGCNS*)malloc(sizeof(CTGCNS));
     cc->obj = obj;
     cc->itercns = itercns;
     cc->infocns = infocns;
@@ -495,7 +495,7 @@ static inline SAMBlock *init_samblock(SeqBank *refs, FileReader *fr, u2i bsize, 
     SAMBlock *sb;
     lay_seq_t *stop;
     assert(bstep <= bsize && 2 * bstep >= bsize);
-    sb = malloc(sizeof(SAMBlock));
+    sb = (SAMBlock*)malloc(sizeof(SAMBlock));
     sb->chridx = 0;
     sb->chrs = init_u4v(32);
     push_u4v(sb->chrs, MAX_U4);
@@ -854,16 +854,16 @@ typedef struct {
 
 static inline WTLAYBlock *init_wtlayblock(FileReader *fr) {
     WTLAYBlock *wb;
-    wb = malloc(sizeof(WTLAYBlock));
+    wb = (WTLAYBlock*)malloc(sizeof(WTLAYBlock));
     wb->tag = init_string(32);
     append_string(wb->tag, "annonymous", 10);
     wb->fr = fr;
     wb->chridx = 0;
     wb->bidx = 0;
     wb->rdidx = 0;
-    wb->key = calloc(1, sizeof(lay_seq_t));
+    wb->key = (lay_seq_t*)calloc(1, sizeof(lay_seq_t));
     wb->key->seq = init_basebank();
-    wb->blk = calloc(1, sizeof(lay_blk_t));
+    wb->blk = (lay_blk_t*)calloc(1, sizeof(lay_blk_t));
     return wb;
 }
 
