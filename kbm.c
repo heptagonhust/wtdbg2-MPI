@@ -28,6 +28,7 @@
 #define RELEASE 19830203
 #endif
 
+
 int kbm_usage() {
     fprintf(stdout, "Program: kbm is a simple instance which implemented kmer-binmap\n");
     fprintf(stdout,
