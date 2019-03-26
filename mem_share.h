@@ -1035,7 +1035,7 @@ static inline size_t mem_load_obj(void *obj, size_t aux_data, uint8_t mem_type,
             ref = obj + m * desc->size;
         }
         for(i = 0; i < desc->n_child; i++) {
-            ptr = ref + desc->addr[i];
+            ptr = (void**)(ref + desc->addr[i]);
             if(desc->mem_type[i] & 0x01) {
                 if(*ptr == NULL) continue;
                 *ptr = (void *)addr;
@@ -1103,7 +1103,7 @@ static inline size_t mem_tree_obj(FILE *out, void *obj, size_t mem_type,
             ref = obj + m * desc->size;
         }
         for(i = 0; i < desc->n_child; i++) {
-            ptr = ref + desc->addr[i];
+            ptr = (void**)(ref + desc->addr[i]);
             if(desc->mem_type[i] & 0x01) {
                 if(*ptr == NULL) continue;
                 if(max_cnt && m >= max_cnt) {
@@ -1204,7 +1204,7 @@ static inline const obj_desc_t *mem_locate_obj(void *obj, size_t *_mem_type,
         }
         nc = (selected && m + 1 == ns) ? trace_childs[0] + 1 : (u4i)desc->n_child;
         for(i = 0; i < nc; i++) {
-            ptr = ref + desc->addr[i];
+            ptr = (void**)(ref + desc->addr[i]);
             if(desc->mem_type[i] & 0x01) {
                 *_mem_type = desc->mem_type[i] | (desc->size ? 0 : MEM_PTR_TYPE_DUMP);
                 if(*ptr == NULL) {

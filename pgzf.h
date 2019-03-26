@@ -612,7 +612,7 @@ static inline size_t write_pgzf(PGZF *pz, void *dat, size_t len) {
 		}
 		*/
         cnt = num_min(len - off, pz->bufsize - pgz->src->size);
-        append_array_u1v(pgz->src, (u1v*)(dat + off), cnt);
+        append_array_u1v(pgz->src, (u1i*)(dat + off), cnt);
         off += cnt;
         if(pgz->src->size == pz->bufsize) {
             pz->tot_in += pgz->src->size;
