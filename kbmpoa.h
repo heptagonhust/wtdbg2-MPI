@@ -17,9 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KMER_BIN_MAP_PO_MSA_CNS_RJ_H
-#define KMER_BIN_MAP_PO_MSA_CNS_RJ_H
-
+#pragma once
+#include "common.h"
 #include "kbm.h"
 #include "wtpoa.h"
 
@@ -384,8 +383,10 @@ static inline int map_kbmpoa(CTGCNS *cc, KBMAux *aux, char *rdtag, u4i qidx,
     aux->par->max_hit = corr_max;
     aux->par->min_aln = num_max(seqlen * corr_cov, min_aln);
     aux->par->min_mat = num_max(aux->par->min_aln * aux->par->min_sim, min_mat);
+
     query_index_kbm(aux, rdtag, qidx, rdseq, seqoff, seqlen);
     map_kbm(aux);
+
     aux->par->self_aln = 0;
     aux->par->max_hit = max_hit;
     aux->par->min_aln = min_aln;
@@ -438,5 +439,3 @@ static inline int map_kbmpoa(CTGCNS *cc, KBMAux *aux, char *rdtag, u4i qidx,
     map_kbm(aux);
     return 1;
 }
-
-#endif

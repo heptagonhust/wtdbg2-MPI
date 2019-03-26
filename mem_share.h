@@ -16,13 +16,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#ifndef __MEM_SHARE_RJ_H
-#define __MEM_SHARE_RJ_H
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+#pragma once
+#include "common.h"
 #if defined(__APPLE__) && defined(__MACH__)
 #include <machine/endian.h>
 #else
@@ -1638,8 +1633,6 @@ static inline void *mem_find_obj_file(const obj_desc_t *desc, char *_path, size_
     free(shmp);
     return mem + 4 * sizeof(size_t);
 }
-
-#endif
 
 /*
  * An example to use mem_dump

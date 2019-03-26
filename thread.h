@@ -17,9 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __THEAD_RJ_H
-#define __THEAD_RJ_H
-
+#include "common.h"
 #include <pthread.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -248,6 +246,7 @@
 
 #define thread_begin_operate(tname, idx) tname = tname##_params + idx
 #define thread_beg_operate(tname, idx) thread_begin_operate(tname, idx)
+
 #define thread_wake(tname)                        \
     do {                                          \
         pthread_mutex_lock(&tname->_COND_LOCK);   \
@@ -255,12 +254,14 @@
         pthread_cond_signal(&tname->_COND);       \
         pthread_mutex_unlock(&tname->_COND_LOCK); \
     } while(0)
+
 #define thread_wake_all(tname)  \
     do {                        \
         thread_beg_iter(tname); \
         thread_wake(tname);     \
         thread_end_iter(tname); \
     } while(0);
+
 #define thread_waitfor_idle(tname)                                                \
     while(1) {                                                                    \
         int _stop;                                                                \
@@ -278,6 +279,7 @@
         pthread_mutex_unlock(&tname->_COND_LOCK);                                 \
         if(_stop) break;                                                          \
     }
+
 #define thread_wait(tname) thread_waitfor_idle(tname)
 #define thread_wait_next(tname)                                              \
     do {                                                                     \
@@ -285,6 +287,7 @@
         thread_wait(tname);                                                  \
         tname##_var_next = (tname##_var_next + 1) % tname##_params[0].n_cpu; \
     } while(0)
+
 #define thread_end_operate(tname, idx) tname = NULL
 #define thread_begin_iter(tname)                                               \
     {                                                                          \
@@ -292,6 +295,7 @@
         int tname##_i;                                                         \
         for(tname##_i = 0; tname##_i < tname##_params[0].n_cpu; tname##_i++) { \
             tname = tname##_params + tname##_i
+
 #define thread_beg_iter(tname) thread_begin_iter(tname)
 #define thread_is_idle(tname) (tname->state == 0)
 #define thread_n_cpus(tname) (tname->n_cpu)
@@ -299,6 +303,7 @@
 #define thread_end_iter(tname) \
     }                          \
     }
+
 #define thread_access(tname, idx) (tname##_params + idx)
 
 #define thread_beg_monitor(tname, usec) \
@@ -328,6 +333,7 @@
             break;                                                 \
         }                                                          \
     }
+
 #define thread_wait_one(tname) thread_waitfor_one_idle(tname)
 
 #define thread_test_all(tname, expr) \
@@ -382,6 +388,7 @@
         thread_wait(tname);                                                \
         pthread_join(tname##_pids[tname##_i], NULL)
 #define thread_beg_close(tname) thread_begin_close(tname)
+
 #define thread_end_close(tname)   \
     }                             \
     free((void *)tname##_params); \
@@ -441,4 +448,3 @@
         }                                   \
     }
 
-#endif
