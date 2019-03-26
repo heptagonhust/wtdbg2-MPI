@@ -274,5 +274,5 @@ typedef struct KBMAux {
 } KBMAux;
 
 
-#include "kbm_map.h"
+#include "kbm_opt.h"
 #include "kbm_defines.h"

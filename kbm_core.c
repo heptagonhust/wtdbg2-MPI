@@ -2068,4 +2068,4 @@ const obj_desc_t kbm_obj_desc = {
 // Please note that, kbm->tag2idx is not functional after mem_load, because we use cuhash_obj_desc instread of cuhash_deep_obj_desc
 
 
-#include "kbm_map.h"
+#include "kbm_opt.h"
