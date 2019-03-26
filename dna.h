@@ -532,7 +532,7 @@ static const obj_desc_t basebank_obj_desc = {"BaseBank",
 
 static inline BaseBank *init_basebank() {
     BaseBank *bnk;
-    bnk = malloc(sizeof(BaseBank));
+    bnk = (BaseBank*)malloc(sizeof(BaseBank));
     bnk->size = 0;
     bnk->cap = 256;
     bnk->bits = calloc(bnk->cap / 32 + 1, 8);
@@ -839,7 +839,7 @@ static inline void print_lines_basebank(BaseBank *bnk, u8i off, u8i len, FILE *o
     u8i i, b, e;
     char *buf;
     if(linewidth < 1) linewidth = 100;
-    buf = malloc(linewidth + 1);
+    buf = (char*)malloc(linewidth + 1);
     for(b = off; b < off + len;) {
         e = num_min(b + linewidth, off + len);
         for(i = b; i < e; i++) {
@@ -994,8 +994,8 @@ u4i *offs, *counts[2];
 u4i i, j, size, klen, m, n, v, t;
 u4i ncpu, tidx;
 bb = _mradix->bb;
-counts[0] = calloc((MAX_U2 + 1), sizeof(u4i));    // used in twice
-counts[1] = calloc((MAX_U2 + 1), sizeof(u4i));
+counts[0] = (u4i*)calloc((MAX_U2 + 1), sizeof(u4i));    // used in twice
+counts[1] = (u4i*)calloc((MAX_U2 + 1), sizeof(u4i));
 ncpu = _mradix->n_cpu;
 tidx = _mradix->t_idx;
 thread_beg_loop(_mradix);
@@ -1114,8 +1114,8 @@ static inline void msd_radix_sort_u4_basebank(BaseBank *bb, u4v *offs, u1v *lcps
     clear_u4v(offs);
     encap_u4v(offs, size);
     offs->size = size;
-    counts[0] = calloc(MAX_U2 + 1, sizeof(u4i));
-    counts[1] = calloc(MAX_U2 + 1, sizeof(u4i));
+    counts[0] = (u4i*)calloc(MAX_U2 + 1, sizeof(u4i));
+    counts[1] = (u4i*)calloc(MAX_U2 + 1, sizeof(u4i));
     if(log)
         fprintf(log, "[%s] msd_radix_sort length=%u depth=%u\n", date(), (u4i)bb->size,
                 klen);
@@ -1217,7 +1217,7 @@ static const obj_desc_t seqbank_obj_desc = {
 
 static inline SeqBank *init_seqbank() {
     SeqBank *sb;
-    sb = malloc(sizeof(SeqBank));
+    sb = (SeqBank*)malloc(sizeof(SeqBank));
     sb->nseq = 0;
     sb->rdseqs = init_basebank();
     sb->rdtags = init_cplist(16);
@@ -1268,7 +1268,7 @@ static inline void push_seqbank(SeqBank *sb, char *tag, int tag_len, char *seq,
                                 int seq_len) {
     char *ptr;
     if(tag && tag_len) {
-        ptr = malloc(tag_len + 1);
+        ptr = (char*)malloc(tag_len + 1);
         memcpy(ptr, tag, tag_len);
         ptr[tag_len] = 0;
     } else {
@@ -1286,7 +1286,7 @@ static inline void fwdbitpush_seqbank(SeqBank *sb, char *tag, int tag_len, u8i *
                                       u8i off, u4i len) {
     char *ptr;
     if(tag && tag_len) {
-        ptr = malloc(tag_len + 1);
+        ptr = (char*)malloc(tag_len + 1);
         memcpy(ptr, tag, tag_len);
         ptr[tag_len] = 0;
     } else {
@@ -1304,7 +1304,7 @@ static inline void revbitpush_seqbank(SeqBank *sb, char *tag, int tag_len, u8i *
                                       u8i off, u4i len) {
     char *ptr;
     if(tag && tag_len) {
-        ptr = malloc(tag_len + 1);
+        ptr = (char*)malloc(tag_len + 1);
         memcpy(ptr, tag, tag_len);
         ptr[tag_len] = 0;
     } else {

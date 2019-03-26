@@ -272,7 +272,7 @@ static const char *colors[2][2] = {{"blue", "green"}, {"red", "gray"}};
 static inline Graph *init_graph(KBM *kbm) {
     Graph *g;
     u4i rid;
-    g = malloc(sizeof(Graph));
+    g = (Graph*)malloc(sizeof(Graph));
     g->kbm = kbm;
     g->par = kbm->par;
     g->rpar = NULL;

@@ -86,7 +86,7 @@ static inline BitsVec *init_bitsvec(uint64_t size, uint32_t n_bit) {
     else if(n_bit > 8)
         n_bit = 8;
     if(size < 8) size = 8;
-    vec = calloc(1, sizeof(BitsVec));
+    vec = (BitsVec*)calloc(1, sizeof(BitsVec));
     vec->n_bit = n_bit;
     vec->mask = (1U << n_bit) - 1U;
     vec->size = 0;

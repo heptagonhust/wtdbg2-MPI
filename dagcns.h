@@ -93,7 +93,7 @@ typedef struct {
 static inline DAGCNS *init_dagcns(int W, int M, int X, int I, int D, int E, f4i pM,
                                   f4i pX, f4i pI, f4i pD) {
     DAGCNS *g;
-    g = malloc(sizeof(DAGCNS));
+    g = (DAGCNS*)malloc(sizeof(DAGCNS));
     g->cns = init_u8list(1024);
     g->deps = init_u32list(1024);
     g->nodes = init_dagnodev(1024);

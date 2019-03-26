@@ -4702,7 +4702,7 @@ static inline u8i generic_print_graph(Graph *g, graph_print_func func, char *pre
     {
         fprintf(KBM_LOGF, "[%s] output \"%s%s\".", date(), prefix, suffix ? suffix : "");
         fflush(KBM_LOGF);
-        file = malloc(strlen(prefix) + (suffix ? strlen(suffix) : 0) + 2);
+        file = (char*)malloc(strlen(prefix) + (suffix ? strlen(suffix) : 0) + 2);
         sprintf(file, "%s%s", prefix, suffix ? suffix : "");
         out = fopen(file, "w");
         cnt = func(g, out);

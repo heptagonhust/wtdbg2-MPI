@@ -178,7 +178,7 @@ static inline DBG *init_dbg(uint32_t ksize) {
         fflush(stderr);
         exit(1);
     }
-    g = malloc(sizeof(DBG));
+    g = (DBG*)malloc(sizeof(DBG));
     g->hz = 0;
     g->ksize = ksize;
     g->kmask = 0xFFFFFFFFFFFFFFFFLLU >> ((32 - ksize) << 1);
@@ -351,9 +351,9 @@ static inline void print_kmers_dbg(DBG *g, FILE *out) {
 static inline CNS *init_cns(uint32_t ksize, int Z, int W, int M, int X, int I, int D,
                             int E, int H, int L) {
     CNS *cns;
-    cns = malloc(sizeof(CNS));
+    cns = (CNS*)malloc(sizeof(CNS));
     cns->g = init_dbg(ksize);
-    cns->fbg = malloc(sizeof(FBG));
+    cns->fbg = (FBG*)malloc(sizeof(FBG));
     cns->fbg->kmers = init_fbgkmerh(1023);
     cns->fbg->edges = init_fbgedgev(32);
     memset(next_ref_fbgedgev(cns->fbg->edges), 0, sizeof(fbg_edge_t));

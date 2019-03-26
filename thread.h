@@ -162,9 +162,9 @@
     tname##_params =                                                               \
         (struct tname##_struct *)malloc(sizeof(struct tname##_struct) * n_thread); \
     tname##_pids = (pthread_t *)malloc(sizeof(pthread_t) * n_thread);              \
-    tname##_mlock = calloc(1, sizeof(pthread_mutex_t));                            \
+    tname##_mlock = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));                            \
     *tname##_mlock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;                   \
-    tname##_rwlock = calloc(1, sizeof(pthread_rwlock_t));                          \
+    tname##_rwlock = (pthread_rwlock_t*)calloc(1, sizeof(pthread_rwlock_t));                          \
     *tname##_rwlock = (pthread_rwlock_t)PTHREAD_RWLOCK_INITIALIZER;                \
     for(tname##_i = 0, tname##_j = 0; tname##_i < (int)(n_thread); tname##_i++) {  \
         tname = tname##_params + tname##_i;                                        \

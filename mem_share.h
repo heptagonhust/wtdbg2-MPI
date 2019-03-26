@@ -162,7 +162,7 @@ static inline void print_backtrace(FILE *out, int max_frame) {
     void **buffer;
     int frames;
     if(max_frame < 1) max_frame = 1;
-    buffer = malloc(sizeof(void *) * max_frame);
+    buffer = (void **)malloc(sizeof(void *) * max_frame);
     frames = backtrace(buffer, max_frame);
     backtrace_symbols_fd(buffer, frames, fileno(out));
     free(buffer);
@@ -198,7 +198,7 @@ static inline size_t roundup_times(size_t v, size_t base) {
 
 static inline void *malloc16(size_t size) {
     u1i *p, *q;
-    p = malloc(size + 16);
+    p = (u1i*)malloc(size + 16);
     if(p == NULL) return NULL;
     q = (u1i *)(((u8i)(p + 16)) & (~0xFLLU));
     *(q - 1) = q - p;
@@ -371,7 +371,7 @@ static inline char *absolute_filename(char *filename) {
     if(filename == NULL) return NULL;
     if(filename[0] == '/') return strdup(filename);
     cwd = getcwd(NULL, 0);
-    path = malloc(strlen(cwd) + strlen(filename) + 2);
+    path = (char*)malloc(strlen(cwd) + strlen(filename) + 2);
     x = 0;
     y = 0;
     z = 0;
@@ -420,7 +420,7 @@ static inline int exists_file(char *dir, char *filename) {
         free(realpath);
         return 0;
     }
-    fullname = malloc(strlen(realpath) + strlen(filename) + 3);
+    fullname = (char*)malloc(strlen(realpath) + strlen(filename) + 3);
     sprintf(fullname, "%s/%s", realpath, filename);
     free(realpath);
     ret = file_exists(fullname);
@@ -905,7 +905,7 @@ static inline void mem_dup_obj(void **ret, void *obj, size_t aux_data, uint8_t m
     }
     if(mem_type & 0x01) {
         if(mem_type & 0x02) {
-            *ret = calloc(cnt, sizeof(void *) * cnt);
+            *ret = (void **)calloc(cnt, sizeof(void *) * cnt);
         } else if(desc->size) {
             *ret = calloc(cnt, desc->size);
             memcpy(*ret, obj, desc->size * cnt);
@@ -1341,10 +1341,10 @@ static inline void print_tree_obj_file(FILE *out, const obj_desc_t *desc, char *
         fflush(stderr);
         return;
     }
-    size = alloca(sizeof(size_t));
-    mem_type = alloca(sizeof(size_t));
-    cnt = alloca(sizeof(size_t));
-    aux_data = alloca(sizeof(size_t));
+    size = (size_t*)alloca(sizeof(size_t));
+    mem_type = (size_t*)alloca(sizeof(size_t));
+    cnt = (size_t*)alloca(sizeof(size_t));
+    aux_data = (size_t*)alloca(sizeof(size_t));
     fread(size, sizeof(size_t), 1, file);
     fread(mem_type, sizeof(size_t), 1, file);
     fread(cnt, sizeof(size_t), 1, file);
@@ -1377,10 +1377,10 @@ static inline void *mem_read_obj_file(const obj_desc_t *desc, char *path, size_t
         fflush(stderr);
         return NULL;
     }
-    if(size == NULL) size = alloca(sizeof(size_t));
-    if(mem_type == NULL) mem_type = alloca(sizeof(size_t));
-    if(cnt == NULL) cnt = alloca(sizeof(size_t));
-    if(aux_data == NULL) aux_data = alloca(sizeof(size_t));
+    if(size == NULL) size = (size_t*)alloca(sizeof(size_t));
+    if(mem_type == NULL) mem_type = (size_t*)alloca(sizeof(size_t));
+    if(cnt == NULL) cnt = (size_t*)alloca(sizeof(size_t));
+    if(aux_data == NULL) aux_data = (size_t*)alloca(sizeof(size_t));
     fread(size, sizeof(size_t), 1, file);
     fread(mem_type, sizeof(size_t), 1, file);
     fread(cnt, sizeof(size_t), 1, file);
@@ -1420,10 +1420,10 @@ static inline void *mem_read_sub_obj_file(const obj_desc_t *desc, u4i *trace_chi
         fflush(stderr);
         exit(1);
     }
-    if(size == NULL) size = alloca(sizeof(size_t));
-    mem_type = alloca(sizeof(size_t));
-    cnt = alloca(sizeof(size_t));
-    aux_data = alloca(sizeof(size_t));
+    if(size == NULL) size = (size_t*)alloca(sizeof(size_t));
+    mem_type = (size_t*)alloca(sizeof(size_t));
+    cnt = (size_t*)alloca(sizeof(size_t));
+    aux_data = (size_t*)alloca(sizeof(size_t));
     fread(size, sizeof(size_t), 1, file);
     fread(mem_type, sizeof(size_t), 1, file);
     fread(cnt, sizeof(size_t), 1, file);
@@ -1475,10 +1475,10 @@ static inline void *mem_load_obj_file(const obj_desc_t *desc, char *_path, size_
         fflush(stderr);
         exit(1);
     }
-    if(size == NULL) size = alloca(sizeof(size_t));
-    if(mem_type == NULL) mem_type = alloca(sizeof(size_t));
-    if(cnt == NULL) cnt = alloca(sizeof(size_t));
-    if(aux_data == NULL) aux_data = alloca(sizeof(size_t));
+    if(size == NULL) size = (size_t*)alloca(sizeof(size_t));
+    if(mem_type == NULL) mem_type = (size_t*)alloca(sizeof(size_t));
+    if(cnt == NULL) cnt = (size_t*)alloca(sizeof(size_t));
+    if(aux_data == NULL) aux_data = (size_t*)alloca(sizeof(size_t));
     fread(size, sizeof(size_t), 1, file);
     fread(mem_type, sizeof(size_t), 1, file);
     fread(cnt, sizeof(size_t), 1, file);
@@ -1488,7 +1488,7 @@ static inline void *mem_load_obj_file(const obj_desc_t *desc, char *_path, size_
     //fd = fileno(file);
     //mem = mmap(0, (size + 4 * sizeof(size_t) + psize - 1) / psize * psize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     gethostname(hostname, 64);
-    shadow = alloca(strlen(shmp) + strlen(hostname) + 40);
+    shadow = (char*)alloca(strlen(shmp) + strlen(hostname) + 40);
     sprintf(shadow, "%s.mem_share.%s.%ld.shm", shmp, hostname, gethostid());
     fd = shm_open(shadow, O_CREAT | O_RDWR, 0777);
     if(fd == -1) {
@@ -1524,7 +1524,7 @@ static inline void *mem_load_obj_file(const obj_desc_t *desc, char *_path, size_
     fflush(stderr);
     mem_load_obj(mem + 4 * sizeof(size_t), *aux_data, *mem_type, desc, 0, *cnt);
     //if(desc->post) desc->post(mem + 4 * sizeof(size_t), *aux_data);
-    lock = alloca(strlen(shmp) + strlen(hostname) + 20);
+    lock = (char*)alloca(strlen(shmp) + strlen(hostname) + 20);
     sprintf(lock, "%s.mem_share.%s.%ld", shmp, hostname, gethostid());
     if((fd = shm_open(lock, O_CREAT | O_RDWR, 0777)) == -1) {
         fprintf(stderr, " -- shm_open failed: %s in %s -- %s:%d --\n", lock, __FUNCTION__,
@@ -1560,14 +1560,14 @@ static inline int mem_stop_obj_file(char *_path) {
     shmp = strdup(path);
     replace_char(shmp, '/', '_', 0);
     gethostname(hostname, 64);
-    shadow = alloca(strlen(shmp) + strlen(hostname) + 40);
+    shadow = (char*)alloca(strlen(shmp) + strlen(hostname) + 40);
     sprintf(shadow, "%s.mem_share.%s.%ld.shm", shmp, hostname, gethostid());
     if(shm_unlink(shadow) == -1) {
         fprintf(stderr, " -- Failed to remove mmap object %s --\n", shadow);
         fflush(stderr);
         return 0;
     }
-    lock = alloca(strlen(shmp) + strlen(hostname) + 20);
+    lock = (char*)alloca(strlen(shmp) + strlen(hostname) + 20);
     sprintf(lock, "%s.mem_share.%s.%ld", shmp, hostname, gethostid());
     if(shm_unlink(lock) == -1) {
         fprintf(stderr, " -- Failed to remove mmap object %s --\n", lock);
@@ -1594,12 +1594,12 @@ static inline void *mem_find_obj_file(const obj_desc_t *desc, char *_path, size_
     path = absolute_filename(_path);
     shmp = strdup(path);
     replace_char(shmp, '/', '_', 0);
-    lock = alloca(strlen(shmp) + strlen(hostname) + 32);
+    lock = (char*)alloca(strlen(shmp) + strlen(hostname) + 32);
     sprintf(lock, "%s.mem_share.%s.%ld", shmp, hostname, gethostid());
-    if(size == NULL) size = alloca(sizeof(size_t));
-    if(mem_type == NULL) mem_type = alloca(sizeof(size_t));
-    if(cnt == NULL) cnt = alloca(sizeof(size_t));
-    if(aux_data == NULL) aux_data = alloca(sizeof(size_t));
+    if(size == NULL) size = (size_t*)alloca(sizeof(size_t));
+    if(mem_type == NULL) mem_type = (size_t*)alloca(sizeof(size_t));
+    if(cnt == NULL) cnt = (size_t*)alloca(sizeof(size_t));
+    if(aux_data == NULL) aux_data = (size_t*)alloca(sizeof(size_t));
     if((fd = shm_open(lock, O_RDWR, 0777)) == -1) {
         return NULL;
     }
@@ -1611,7 +1611,7 @@ static inline void *mem_find_obj_file(const obj_desc_t *desc, char *_path, size_
     addr = (void *)msg[0];
     *size = msg[1];
     munmap(msg, psize);
-    shadow = alloca(strlen(shmp) + strlen(hostname) + 40);
+    shadow = (char*)alloca(strlen(shmp) + strlen(hostname) + 40);
     sprintf(shadow, "%s.mem_share.%s.%ld.shm", shmp, hostname, gethostid());
     fd = shm_open(shadow, O_RDWR, 0777);
     prot = PROT_READ;
@@ -1673,7 +1673,7 @@ const obj_desc_t type2_obj_desc = {"TYPE2", sizeof(Type2), 6, {0, 0, 1, 2, 3, 3}
 
 int main(){
 	Type2 *t2, *t3;
-	t2 = calloc(1, sizeof(Type2));
+	t2 = (Type2*)calloc(1, sizeof(Type2));
 	int idx = 0;
 	t2->d1.val = idx ++;
 	t2->d1.str = strdup("d1");

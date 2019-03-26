@@ -49,7 +49,7 @@ static inline TriPOG *init_tripog(u4i seqmax, int shuffle, int winlen, int winmi
                                   int fail_skip, POGPar *par) {
     TriPOG *tp;
     u4i i;
-    tp = malloc(sizeof(TriPOG));
+    tp = (TriPOG*)malloc(sizeof(TriPOG));
     tp->seqs = init_seqbank();
     tp->rbegs = init_u2v(32);
     tp->rends = init_u2v(32);

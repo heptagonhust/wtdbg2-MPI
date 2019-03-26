@@ -228,7 +228,7 @@ static inline VString *as_vstring(char *chs) {
     string_size_t len;
     VString *str;
     len = strlen(chs);
-    str = malloc(sizeof(VString));
+    str = (VString*)malloc(sizeof(VString));
     str->string = chs;
     str->size = len;
     return str;

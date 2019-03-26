@@ -46,7 +46,7 @@
                 (cap) =                                                                  \
                     (((size) + 1 + 0xFFFFFFFLLU - 1LLU) / 0xFFFFFFFLLU) * 0xFFFFFFFLLU;  \
             }                                                                            \
-            (ary) = realloc((ary), sizeof(e_type) * (cap));                              \
+            (ary) = (e_type*)realloc((ary), sizeof(e_type) * (cap));                              \
             if((ary) == NULL) {                                                          \
                 fprintf(stderr,                                                          \
                         " -- Out of memory, try to allocate %llu bytes in %s, -- %s:%d " \
@@ -279,7 +279,7 @@
                     list->cap += inc_size;                                               \
                 }                                                                        \
             }                                                                            \
-            list->buffer = realloc(list->buffer, list->cap * sizeof(e_type));            \
+            list->buffer = (e_type*)realloc(list->buffer, list->cap * sizeof(e_type));            \
         }                                                                                \
         memset(list->buffer + list->size, 0, n * sizeof(e_type));                        \
     }                                                                                    \
@@ -776,11 +776,11 @@ static const obj_desc_t cplist_deep_obj_desc = {
     static inline list_type *init_##list_type(size_type size) {                        \
         list_type *list;                                                               \
         if(size < 2) size = 2;                                                         \
-        list = malloc(sizeof(list_type));                                              \
+        list = (list_type*)malloc(sizeof(list_type));                                              \
         list->size = 0;                                                                \
         list->cap = size;                                                              \
-        list->buffer = calloc(size, sizeof(e_type));                                   \
-        list->recyc = calloc(2, sizeof(size_type));                                    \
+        list->buffer = (e_type*)calloc(size, sizeof(e_type));                                   \
+        list->recyc = (size_type*)calloc(2, sizeof(size_type));                                    \
         list->rsize = 0;                                                               \
         list->rcap = 2;                                                                \
         list->userdata = 0;                                                            \
