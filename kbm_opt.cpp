@@ -1,4 +1,16 @@
 #include "kbm_defines.h"
+#include "debrain.h"
+#include <thread>
+#include <iostream>
+#include <glog/logging.h>
+
+auto fake_init = []() {
+    google::InitGoogleLogging("./wtdbg");
+    return 0;
+}();
+
+
+
 const obj_desc_t kbm_read_t_obj_desc = {
     "kbm_read_t_obj_desc",       sizeof(kbm_read_t),     1,    {1},
     {offsetof(kbm_read_t, tag)}, {&OBJ_DESC_CHAR_ARRAY}, NULL, NULL};
@@ -9,8 +21,10 @@ void map_kbm(KBMAux *aux) {
 #ifdef TEST_MODE
     if(aux->par->test_mode >= 4) return;
 #endif
+    fake_init++;
     KBM *kbm = aux->kbm;
     while(aux->hptr < aux->bmlen) {
+        LOG(INFO) << "hptr" << aux->hptr << "bmlem" << aux->bmlen;
         if(aux->hptr - aux->bmoff >= aux->nheap) {
             aux->bmoff += aux->nheap;
             for(int i = 0; i < aux->nheap; i++) {
