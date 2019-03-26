@@ -365,8 +365,9 @@ static inline char *relative_filename(char *filename) {
     return strdup(ptr + 1);
 }
 
-static inline char *absolute_filename(char *filename) {
-    char *path, *cwd, *ptr;
+static inline char *absolute_filename(const char *filename) {
+    char *path, *cwd;
+    const char *ptr;
     int x, y, z, i;
     if(filename == NULL) return NULL;
     if(filename[0] == '/') return strdup(filename);

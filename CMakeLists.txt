@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-set(CMAKE_C_FLAGS "-Wall -Wno-unused-but-set-variable -mpopcnt -march=native")
+set(CMAKE_C_FLAGS "-Wall -Wno-unused-but-set-variable -mpopcnt -march=native -Wno-pointer-arith")
 
 add_library(ksw ksw.c kbm_map.cpp kbm_core.c)
 target_link_libraries(ksw pthread m rt z)

@@ -535,7 +535,7 @@ static inline BaseBank *init_basebank() {
     bnk = (BaseBank*)malloc(sizeof(BaseBank));
     bnk->size = 0;
     bnk->cap = 256;
-    bnk->bits = calloc(bnk->cap / 32 + 1, 8);
+    bnk->bits = (uint8_t*)calloc(bnk->cap / 32 + 1, 8);
     return bnk;
 }
 

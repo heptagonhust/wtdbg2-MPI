@@ -91,7 +91,7 @@ static inline BitsVec *init_bitsvec(uint64_t size, uint32_t n_bit) {
     vec->mask = (1U << n_bit) - 1U;
     vec->size = 0;
     vec->cap = size;
-    vec->bits = calloc((size * vec->n_bit + 15) / 8, 1);
+    vec->bits = (uint8_t*)calloc((size * vec->n_bit + 15) / 8, 1);
     return vec;
 }
 

@@ -164,7 +164,7 @@ static inline uint64_t _rj_hashset_find_prime(uint64_t n) {
         set->load_factor = factor;                                                \
         set->max = set->size * set->load_factor;                                  \
         set->iter_ptr = 0;                                                        \
-        set->array = calloc(set->size, set->e_size);                              \
+        set->array = (hash_ele_type*)calloc(set->size, set->e_size);                              \
         set->ones = init_bitvec(set->size);                                       \
         set->dels = init_bitvec(set->size);                                       \
         set->userdata = NULL;                                                     \
@@ -462,7 +462,7 @@ static inline uint64_t _rj_hashset_find_prime(uint64_t n) {
         do {                                                                        \
             n = _rj_hashset_find_prime(n * 2);                                      \
         } while(n * set->load_factor < set->count + num);                           \
-        set->array = realloc(set->array, n * set->e_size);                          \
+        set->array = (hash_ele_type*)realloc(set->array, n * set->e_size);                          \
         if(set->array == NULL) {                                                    \
             fprintf(stderr, "-- Out of memory --\n");                               \
             print_backtrace(stderr, 20);                                            \
