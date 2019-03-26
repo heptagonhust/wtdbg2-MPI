@@ -1210,9 +1210,8 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs,       
     clear_kbmdpev(aux->caches[1]);
     clear_kbmmapv(aux->hits);
     clear_bitsvec(aux->cigars);
-#ifdef TEST_MODE
-    if(par->test_mode >= 7) return;
-#endif
+    RETURN_IF_TEST(par, 7);
+
     bmin = par->self_aln
                ? kbm->reads->buffer[qidx].binoff + kbm->reads->buffer[qidx].bincnt
                : 0;
@@ -1223,9 +1222,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs,       
     }
     split_FIXP_kmers_kbm(rdseqs, seqoff, aux->slen, par->ksize, par->psize, par->kmer_mod,
                          aux->koffs);
-#ifdef TEST_MODE
-    if(par->test_mode >= 6) return;
-#endif
+    RETURN_IF_TEST(par, 6);
     tot = 0;
     for(i = 0; i < 2; i++) {
         next = 0;
@@ -1372,9 +1369,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs,       
         clear_u4v(aux->heaps[i]);
     }
     //fprintf(stderr, " -- %s tot=%d avg=%d bmlen=%d bmcnt=%d mr=%d qnbin=%d in %s -- %s:%d --\n", aux->qtag, tot, tot / aux->bmlen, aux->bmlen, aux->bmcnt, mr, aux->qnbin, __FUNCTION__, __FILE__, __LINE__); fflush(stderr);
-#ifdef TEST_MODE
-    if(par->test_mode >= 5) return;
-#endif
+    RETURN_IF_TEST(par, 5);
     // init heaps
     for(i = 0; i < aux->refs->size; i++) {
         ref = ref_kbmrefv(aux->refs, i);
@@ -1882,6 +1877,7 @@ void push_kmer_match_kbm(KBMAux *aux, int dir, kbm_dpe_t *p) {
         }
     }
     reset_kbmdp(dp, aux, dp->kms->buffer[0].bidx);
+
 #ifdef TEST_MODE
     if(aux->par->test_mode >= 1) {
         clear_kbmdpev(dp->kms);
@@ -1892,6 +1888,7 @@ void push_kmer_match_kbm(KBMAux *aux, int dir, kbm_dpe_t *p) {
         return;
     }
 #endif
+
     blen = dp->kms->buffer[dp->kms->size - 1].bidx + 1 - dp->kms->buffer[0].bidx + 2;
     {
         push_u4v(dp->coffs, 0);

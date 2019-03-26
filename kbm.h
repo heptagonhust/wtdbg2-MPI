@@ -30,6 +30,13 @@
 
 //#define __DEBUG__	1
 #define TEST_MODE
+#ifdef TEST_MODE
+#define NORMAL_AT_TEST(par, level) if(par->test_mode <= level)
+#define RETURN_IF_TEST(par, level) if(par->test_mode >= level)return
+#else
+#define SKIP_IF_TEST if(1)
+#define RETURN_IF_TEST do{}while(0)
+#endif
 
 #define KBM_BSIZE 256
 #define KBM_BIN_SIZE KBM_BSIZE
