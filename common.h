@@ -10,3 +10,4 @@ char *canonicalize_file_name(const char *path);
 #else
 #define EXTERN_C
 #endif
+
