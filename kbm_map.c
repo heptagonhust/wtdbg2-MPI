@@ -3,6 +3,8 @@ const obj_desc_t kbm_read_t_obj_desc = {
     "kbm_read_t_obj_desc",       sizeof(kbm_read_t),     1,    {1},
     {offsetof(kbm_read_t, tag)}, {&OBJ_DESC_CHAR_ARRAY}, NULL, NULL};
 
+
+
 void map_kbm(KBMAux *aux) {
 #ifdef TEST_MODE
     if(aux->par->test_mode >= 4) return;
