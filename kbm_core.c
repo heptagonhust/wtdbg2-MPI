@@ -1,4 +1,5 @@
-#include "kbm.h"
+
+#include "kbm_defines.h"
 KBMPar *init_kbmpar() {
     KBMPar *par;
     par = (KBMPar*)malloc(sizeof(KBMPar));
@@ -34,7 +35,6 @@ void free_kbmpar(KBMPar *par) {
     free(par);
 }
 
-#include "kbm_map.h"
 
 KBM *init_kbm(KBMPar *par) {
     KBM *kbm;
@@ -2067,3 +2067,5 @@ const obj_desc_t kbm_obj_desc = {
     rebuild_tag2idx_kbm};
 // Please note that, kbm->tag2idx is not functional after mem_load, because we use cuhash_obj_desc instread of cuhash_deep_obj_desc
 
+
+#include "kbm_map.h"
