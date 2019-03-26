@@ -20,11 +20,11 @@
 #ifndef __BIT_VEC_RJ_H
 #define __BIT_VEC_RJ_H
 
+#include "mem_share.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include "mem_share.h"
 
 static const u1i byte_ones_table[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3,

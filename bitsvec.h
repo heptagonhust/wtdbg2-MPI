@@ -20,11 +20,11 @@
 #ifndef __BITS_VEC_RJ_H
 #define __BITS_VEC_RJ_H
 
+#include "mem_share.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include "mem_share.h"
 
 /* Useful functions when n_bit > 8 */
 

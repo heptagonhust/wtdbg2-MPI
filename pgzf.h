@@ -20,10 +20,10 @@
 #ifndef __PGZF_RJ_H
 #define __PGZF_RJ_H
 
-#include <zlib.h>
 #include "mem_share.h"
 #include "list.h"
 #include "thread.h"
+#include <zlib.h>
 
 #define PGZF_DEFAULT_BUFF_SIZE (1U << 24)    // 16MB
 #define PGZF_MAX_BUFF_SIZE (1U << 28)

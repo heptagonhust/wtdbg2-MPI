@@ -20,11 +20,11 @@
 #ifndef __BIT2_VEC_RJ_H
 #define __BIT2_VEC_RJ_H
 
+#include "mem_share.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include "mem_share.h"
 
 typedef struct {
     uint8_t *bits;

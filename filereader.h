@@ -19,7 +19,11 @@
 
 #ifndef __FILEREADER_RJ_H
 #define __FILEREADER_RJ_H
-
+#include "mem_share.h"
+#include "chararray.h"
+#include "list.h"
+#include "thread.h"
+#include "pgzf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,11 +31,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
-#include "chararray.h"
-#include "mem_share.h"
-#include "list.h"
-#include "thread.h"
-#include "pgzf.h"
+
 
 #define BIOSEQ_ATTR_NULL 0
 #define BIOSEQ_ATTR_TAG 1
