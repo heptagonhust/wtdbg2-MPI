@@ -100,3 +100,117 @@ void map_kbm(KBMAux *aux) {
     if(aux->par->strand_mask & 0x01) push_kmer_match_kbm(aux, 0, NULL);
     if(aux->par->strand_mask & 0x02) push_kmer_match_kbm(aux, 1, NULL);
 }
+
+void push_kmer_match_kbm(KBMAux *aux, int dir, kbm_dpe_t *p) {
+    KBMDP *dp;
+    kbm_cmer_t *c;
+    kbm_dpe_t *e, E;
+    u4i i, qb, bb, kmat, kcnt, blen;
+    dp = aux->dps[dir];
+    if(p == NULL) {
+        if(dp->kms->size == 0) {
+            dp->km_len = 0;
+            return;
+        }
+        e = ref_kbmdpev(dp->kms, dp->kms->size - 1);
+        if((int)dp->km_len < aux->par->min_mat ||
+           e->bidx + 1 < dp->kms->buffer[0].bidx + aux->par->min_aln) {
+            clear_kbmdpev(dp->kms);
+            dp->km_len = aux->par->ksize + aux->par->psize;
+            return;
+        }
+    } else {
+        if(dp->kms->size == 0) {
+            dp->km_len = (aux->par->ksize + aux->par->psize);
+            push_kbmdpev(dp->kms, *p);
+            return;
+        }
+
+        e = ref_kbmdpev(dp->kms, dp->kms->size - 1);
+        if(e->bidx == p->bidx) {
+            if(p->poff <= e->poff + aux->par->ksize + aux->par->psize) {
+                dp->km_len += p->poff - e->poff;
+            } else {
+                dp->km_len += aux->par->ksize + aux->par->psize;
+            }
+            push_kbmdpev(dp->kms, *p);
+            return;
+        }
+
+        if(e->bidx + aux->par->max_bgap + 1 < p->bidx ||
+           dp->kms->buffer[0].bidx + aux->par->max_bcnt < p->bidx ||
+           aux->kbm->bins->buffer[e->bidx].ridx != aux->kbm->bins->buffer[p->bidx].ridx) {
+            if(Int(dp->km_len) < aux->par->min_mat ||
+               e->bidx + 1 < dp->kms->buffer[0].bidx + aux->par->min_aln) {
+                clear_kbmdpev(dp->kms);
+                push_kbmdpev(dp->kms, *p);
+                dp->km_len = aux->par->ksize + aux->par->psize;
+                return;
+            }
+        } else {
+            dp->km_len += aux->par->ksize + aux->par->psize;
+            push_kbmdpev(dp->kms, *p);
+            return;
+        }
+    }
+    reset_kbmdp(dp, aux, dp->kms->buffer[0].bidx);
+
+    // #ifdef TEST_MODE
+    //     if(aux->par->test_mode >= 1) {
+    //         clear_kbmdpev(dp->kms);
+    //         if(p) {
+    //             dp->km_len = aux->par->ksize + aux->par->psize;
+    //             push_kbmdpev(dp->kms, *p);
+    //         }
+    //         return;
+    //     }
+    // #endif
+
+    blen = dp->kms->buffer[dp->kms->size - 1].bidx + 1 - dp->kms->buffer[0].bidx + 2;
+    {
+        push_u4v(dp->coffs, 0);
+        clear_bitvec(dp->cmask);
+        encap_bitvec(dp->cmask, aux->qnbit * blen);
+        reg_zeros_bitvec(dp->cmask, 0, aux->qnbit * blen);
+        dp->cmask->n_bit = aux->qnbit;
+        one_bitvec(dp->cmask, dp->cmask->n_bit);
+    }
+    qb = dp->kms->buffer[0].poff;
+    bb = dp->kms->buffer[0].bidx;
+    kcnt = 0;
+    kmat = aux->par->ksize + aux->par->psize;
+    E.bidx = dp->kms->buffer[dp->kms->size - 1].bidx + 1;
+    E.poff = 0;
+    for(i = 0; i <= dp->kms->size; i++) {
+        e = (i < dp->kms->size) ? ref_kbmdpev(dp->kms, i) : &E;
+        if(e->bidx == bb && e->poff / KBM_BIN_SIZE == qb / KBM_BIN_SIZE) {
+            kcnt++;
+            if(qb + aux->par->ksize + aux->par->psize >= e->poff) {
+                kmat += e->poff - qb;
+            } else {
+                kmat += aux->par->ksize + aux->par->psize;
+            }
+        } else {
+            one_bitvec(dp->cmask, (bb - dp->boff) * aux->qnbit + qb / KBM_BIN_SIZE);
+            c = next_ref_kbmcmerv(dp->cms);
+            c->koff = i - kcnt;
+            c->kcnt = kcnt;
+            c->kmat = kmat;
+            c->boff = bb - dp->boff;
+            while(bb < e->bidx) {
+                _dp_cal_spare_row_kbm(aux, dir);
+                bb++;
+            }
+            kcnt = 1;
+            kmat = aux->par->ksize + aux->par->psize;
+        }
+        qb = e->poff;
+    }
+    // flush last row
+    _dp_cal_spare_row_kbm(aux, dir);
+    //collecting maps
+    _dp_path2map_kbm(aux, dir);
+    clear_kbmdpev(dp->kms);
+    if(p) push_kbmdpev(dp->kms, *p);
+    dp->km_len = aux->par->ksize + aux->par->psize;
+}
