@@ -535,7 +535,7 @@ static inline BaseBank *init_basebank() {
     bnk = (BaseBank*)malloc(sizeof(BaseBank));
     bnk->size = 0;
     bnk->cap = 256;
-    bnk->bits = (uint8_t*)calloc(bnk->cap / 32 + 1, 8);
+    bnk->bits = (u8i*)calloc(bnk->cap / 32 + 1, 8);
     return bnk;
 }
 
@@ -568,7 +568,7 @@ static inline void encap_basebank(BaseBank *bnk, u8i inc) {
         bnk->cap = (bnk->size + inc + 0x3FFFFFFFLLU) & (MAX_U8 << 30);
     }
     if(bnk->cap < 32) bnk->cap = 32;
-    bits =(uint8_t*) realloc(bnk->bits, ((bnk->cap >> 5) + 1) << 3);
+    bits = (u8i*) realloc(bnk->bits, ((bnk->cap >> 5) + 1) << 3);
     if(bits == NULL) {
         fprintf(stderr,
                 " -- Out of memory, try to allocate %llu bytes, old size %llu, in %s -- "
@@ -601,7 +601,7 @@ static inline void pack_basebank(BaseBank *bnk) {
     if(size == 0) size = 32;
     if(size >= bnk->cap) return;
     bnk->cap = ((size + 31) / 32) * 32;
-    bnk->bits = (uint8_t*)realloc(bnk->bits, ((bnk->cap >> 5) + 1) << 3);
+    bnk->bits = (u8i*)realloc(bnk->bits, ((bnk->cap >> 5) + 1) << 3);
     memset(bnk->bits + (bnk->cap >> 5), 0, 8);
 }
 
