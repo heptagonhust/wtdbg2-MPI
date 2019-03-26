@@ -571,7 +571,7 @@ static inline int directed_readline_filereader(FileReader *fr, String *line) {
     return 0;
 }
 
-int readline_filereader(FileReader *fr) {
+static inline int readline_filereader(FileReader *fr) {
     int ret;
     ret = ((fr)->pid ? asyn_readline_filereader(fr, (fr)->line)
                      : directed_readline_filereader(fr, (fr)->line));

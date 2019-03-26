@@ -263,7 +263,7 @@ static inline int _read_pgzf_header(FILE *in, u1v *src, u4i *hoff, u4i *zsval,
     return is_pgzf ? PGZF_FILETYPE_PGZF : PGZF_FILETYPE_GZ;
 }
 
-int pgzf_inflate_raw_core(z_stream *z, u1i *dst, u4i *dlen, u1i *src, u4i *slen,
+static inline int pgzf_inflate_raw_core(z_stream *z, u1i *dst, u4i *dlen, u1i *src, u4i *slen,
                           int flush) {
     u4i dl, sl;
     int ret;
@@ -281,7 +281,7 @@ int pgzf_inflate_raw_core(z_stream *z, u1i *dst, u4i *dlen, u1i *src, u4i *slen,
 }
 
 // src start just after gz_header, and include fz_tailer
-int pgzf_inflate_core(u1i *dst, u4i *dlen, u1i *src, u4i slen, int check) {
+static inline int pgzf_inflate_core(u1i *dst, u4i *dlen, u1i *src, u4i slen, int check) {
     z_stream Z, *z;
     u4i soff, dsz;
     uLong crc, rcr;
