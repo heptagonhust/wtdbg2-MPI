@@ -20,13 +20,13 @@
 #ifndef __FIFO_QUEUE_RJ_H
 #define __FIFO_QUEUE_RJ_H
 
+#include "mem_share.h"
+#include "sort.h"
+#include "list.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "sort.h"
-#include "mem_share.h"
-#include "list.h"
 
 #define define_queue_core(list_type, e_type, size_type, inc_size)                      \
                                                                                        \

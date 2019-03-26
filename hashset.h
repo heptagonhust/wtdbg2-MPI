@@ -20,13 +20,13 @@
 #ifndef __HASH_SET_RJ
 #define __HASH_SET_RJ
 
+#include "mem_share.h"
+#include "bitvec.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
-#include "mem_share.h"
-#include "bitvec.h"
 
 static const uint64_t sys_prime_list[61] = {0x7LLU,
                                             0xfLLU,
