@@ -1,4 +1,4 @@
 findings: 
 
-map_kbm is 
+ => map_kbm 
 aux->hptr is 
