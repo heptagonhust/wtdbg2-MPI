@@ -3083,7 +3083,7 @@ static inline u8i gen_unitigs_graph(Graph *g) {
     trace_t *t;
     node_t *n;
     u8i nid, nutg, i;
-    for(i = 0; i < g->utgs->size; i++) free_tracev(g->utgs->buffer[i]);
+    for(i = 0; i < g->utgs->size; i++) free_tracev((tracev *)g->utgs->buffer[i]);
     clear_vplist(g->utgs);
     lens = init_u4v(1024);
     nutg = 0;
@@ -3224,7 +3224,7 @@ static inline u8i gen_contigs_graph(Graph *g, FILE *out) {
     path_t *t;
     frg_t *n;
     u8i nid, nctg, i;
-    for(i = 0; i < g->ctgs->size; i++) free_tracev(g->ctgs->buffer[i]);
+    for(i = 0; i < g->ctgs->size; i++) free_tracev((tracev *)g->ctgs->buffer[i]);
     clear_vplist(g->ctgs);
     nctg = 0;
     for(nid = 0; nid < g->frgs->size; nid++) g->frgs->buffer[nid].bt_visit = 0;
@@ -3547,7 +3547,7 @@ static inline u4i unitigs2frgs_graph(Graph *g, int ncpu) {
         frg->length = frg->len = cal_offset_traces_graph(
             g, g->traces, frg->toff + frg->tx, frg->toff + frg->ty, 0);
     }
-    psort_array(g->frgs->buffer, g->frgs->size, frg_t, ncpu,
+    dog_psort_array(g->frgs->buffer, g->frgs->size, frg_t, ncpu,
                 num_cmpgt(b.length, a.length));
     for(i = 0; i < g->nodes->size; i++) {
         n = ref_nodev(g->nodes, i);
@@ -3782,7 +3782,7 @@ static inline u4i gen_lnks_graph(Graph *g, int ncpu, FILE *log) {
     append_lnkv(lnks, mlnk->lnks);
     free_lnkv(mlnk->lnks);
     thread_end_close(mlnk);
-    psort_array(lnks->buffer, lnks->size, lnk_t, ncpu,
+    dog_psort_array(lnks->buffer, lnks->size, lnk_t, ncpu,
                 num_cmpgtx(a.key, b.key, a.off, b.off));
     if(log) {
         for(i = 0; i < lnks->size; i++) {
@@ -3844,7 +3844,7 @@ static inline u4i gen_lnks_graph(Graph *g, int ncpu, FILE *log) {
     free_lnkv(lnks);
 
     // sort lrefs
-    psort_array(
+    dog_psort_array(
         g->lrefs->buffer + 1, g->lrefs->size - 1, edge_ref_t, ncpu,
         num_cmpgt(
             (a.flg ? ((g->lnks->buffer[a.idx].frg2 << 1) | !g->lnks->buffer[a.idx].dir2)
