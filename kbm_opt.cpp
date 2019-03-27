@@ -3,6 +3,7 @@
 #include <thread>
 #include <iostream>
 #include <glog/logging.h>
+#include <algorithm>
 
 volatile auto fake_init = []() {
     google::InitGoogleLogging("./wtdbg");
