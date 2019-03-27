@@ -52,16 +52,17 @@
     }                                                                                  \
                                                                                        \
     static const obj_desc_t list_type##_obj_desc = {                                   \
-        .tag = TOSTR(list_type##_obj_desc),                                            \
-        .size = sizeof(list_type),                                                     \
-        .n_child = 3,                                                                  \
-        .addr = {offsetof(list_type, buffer), offsetof(list_type, links),              \
+        /*.tag = */TOSTR(list_type##_obj_desc),                                            \
+        /*.size = */sizeof(list_type),                                                     \
+        /*.n_child = */3,                                                                  \
+        /*.mem_type=*/ {0},                                                                 \
+        /*.addr = */ {offsetof(list_type, buffer), offsetof(list_type, links),              \
                  offsetof(list_type, trash)},                                          \
-        .desc = {(struct obj_desc_t *)&OBJ_DESC_DATA,                                  \
+        /*.desc = */{(struct obj_desc_t *)&OBJ_DESC_DATA,                                  \
                  (struct obj_desc_t *)&OBJ_DESC_DATA,                                  \
                  (struct obj_desc_t *)&OBJ_DESC_DATA},                                 \
-        .cnt = list_type##_obj_desc_cnt,                                               \
-        .post = NULL};                                                                 \
+        /*.cnt = */list_type##_obj_desc_cnt,                                               \
+        /*.post = */NULL};                                                                 \
                                                                                        \
     static inline list_type *init_##list_type() {                                      \
         list_type *list = (list_type *)malloc(sizeof(list_type));                      \
