@@ -7,7 +7,7 @@ add_library(ksw ksw.cpp kbm_opt.cpp kbm_core.c debrain.h)
 target_link_libraries(ksw pthread m rt z)
 
 add_executable(kbm kbm.cpp)
-add_executable(wtdbg wtdbg.c)
+add_executable(wtdbg wtdbg.cpp)
 add_executable(wtdbg-cns wtdbg-cns.c)
 add_executable(wtpoa-cns wtpoa-cns.c)
 
