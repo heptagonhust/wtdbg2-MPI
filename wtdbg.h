@@ -351,9 +351,9 @@ static inline void free_graph(Graph *g) {
     free_lnkv(g->lnks);
     free_edgerefv(g->lrefs);
     free_tracev(g->traces);
-    for(i = 0; i < g->utgs->size; i++) free_tracev(g->utgs->buffer[i]);
+    for(i = 0; i < g->utgs->size; i++) free_tracev((tracev *)g->utgs->buffer[i]);
     free_vplist(g->utgs);
-    for(i = 0; i < g->ctgs->size; i++) free_tracev(g->ctgs->buffer[i]);
+    for(i = 0; i < g->ctgs->size; i++) free_tracev((tracev *)g->ctgs->buffer[i]);
     free_vplist(g->ctgs);
     free(g);
 }
