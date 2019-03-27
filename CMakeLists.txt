@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS ${CMAKE_C_FLAGS})
 add_library(ksw ksw.c kbm_opt.cpp kbm_core.c debrain.h)
 target_link_libraries(ksw pthread m rt z)
 
-add_executable(kbm kbm.c)
+add_executable(kbm kbm.cpp)
 add_executable(wtdbg wtdbg.c)
 add_executable(wtdbg-cns wtdbg-cns.c)
 add_executable(wtpoa-cns wtpoa-cns.c)
