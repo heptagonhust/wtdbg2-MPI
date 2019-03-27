@@ -1923,19 +1923,19 @@ const obj_desc_t kbmreadv_deep_obj_desc = {.tag = "kbmreadv_deep_obj_desc",
                                            .cnt = kbmreadv_deep_obj_desc_cnt,
                                            .post = NULL};
 const obj_desc_t kbm_obj_desc = {
-    /*.tag = */"kbm_obj_desc",
-    /*.size = */sizeof(KBM),
-    /*.n_child = */10,
-    /*.mem_type = */{1, 1, 1, 1, 1, 1, 1, 1, 2, 2},
-    /*.addr = */{offsetof(KBM, par), offsetof(KBM, rdseqs), offsetof(KBM, reads),
+    .tag = "kbm_obj_desc",
+    .size = sizeof(KBM),
+    .n_child = 10,
+    .mem_type = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2},
+    .addr = {offsetof(KBM, par), offsetof(KBM, rdseqs), offsetof(KBM, reads),
              offsetof(KBM, tag2idx), offsetof(KBM, bins), offsetof(KBM, binmarks),
              offsetof(KBM, seeds), offsetof(KBM, sauxs), offsetof(KBM, hashs),
              offsetof(KBM, kauxs)},
-    /*.desc = */{&kbmpar_obj_desc, &basebank_obj_desc, &kbmreadv_deep_obj_desc,
+    .desc = {&kbmpar_obj_desc, &basebank_obj_desc, &kbmreadv_deep_obj_desc,
              &cuhash_obj_desc, &kbmbinv_obj_desc, &bitvec_obj_desc, &kbmbmerv_obj_desc,
              &kbmbauxv_obj_desc, &kbmhash_obj_desc, &kbmkauxv_obj_desc},
-    kbm_obj_desc_cnt,
-    rebuild_tag2idx_kbm};
+    .cnt = kbm_obj_desc_cnt,
+    .post = rebuild_tag2idx_kbm};
 // Please note that, kbm->tag2idx is not functional after mem_load, because we use cuhash_obj_desc instread of cuhash_deep_obj_desc
 
 #include "kbm_opt.h"
