@@ -4,11 +4,23 @@
 #include <iostream>
 #include <glog/logging.h>
 #include <algorithm>
+#include <atomic>
 
+std::atomic_int gen_thread_idx(0);
 volatile auto fake_init = []() {
     google::InitGoogleLogging("./wtdbg");
     return 0;
 }();
+
+void breakpoint() {
+    thread_local auto thread_idx = gen_thread_idx++;
+    if(thread_idx == 0){
+        ++fake_init;
+    }
+}
+
+
+
 
 const obj_desc_t kbm_read_t_obj_desc = {
     "kbm_read_t_obj_desc",       sizeof(kbm_read_t),     1,    {1},
@@ -19,6 +31,7 @@ void map_kbm(KBMAux *aux) {
     KBM *kbm = aux->kbm;
     LOG(INFO) << "hptr" << aux->hptr << " bmlem" << aux->bmlen;
 
+    breakpoint();
     for(; aux->hptr < aux->bmlen; aux->hptr++) {
         if(aux->hptr - aux->bmoff >= aux->nheap) {
             aux->bmoff += aux->nheap;
@@ -46,6 +59,7 @@ void map_kbm(KBMAux *aux) {
         clear_kbmdpev(aux->caches[0]);
         clear_kbmdpev(aux->caches[1]);
 
+        breakpoint();
         for(int i = 0; i < heap->size; i++) {
             int idx = heap->buffer[i];
             kbm_ref_t *ref = ref_kbmrefv(aux->refs, idx);
@@ -70,6 +84,7 @@ void map_kbm(KBMAux *aux) {
             }
         }
 
+        breakpoint();
         NORMAL_AT_TEST(aux->par, 2) {
             if(aux->caches[0]->size * (aux->par->ksize + aux->par->psize) <
                UInt(aux->par->min_mat)) {
@@ -90,6 +105,7 @@ void map_kbm(KBMAux *aux) {
             // TODO: sort by bidx+koff is more reasonable, need to modify push_kmer_match_kbm too
         }
 
+        breakpoint();
         NORMAL_AT_TEST(aux->par, 1) {
             for(int i = 0; i < 2; i++) {
                 for(int j = 0; j < aux->caches[i]->size; j++) {
