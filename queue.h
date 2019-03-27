@@ -55,7 +55,7 @@
         /*.tag = */TOSTR(list_type##_obj_desc),                                            \
         /*.size = */sizeof(list_type),                                                     \
         /*.n_child = */3,                                                                  \
-        /*.mem_type=*/ {0},                                                                 \
+        /*.mem_type=*/ {},                                                                 \
         /*.addr = */ {offsetof(list_type, buffer), offsetof(list_type, links),              \
                  offsetof(list_type, trash)},                                          \
         /*.desc = */{(struct obj_desc_t *)&OBJ_DESC_DATA,                                  \
