@@ -2,13 +2,13 @@
 #include "debrain.h"
 #include <thread>
 #include <iostream>
-#include <glog/logging.h>
+// #include <glog/logging.h>
 #include <algorithm>
 #include <atomic>
 
 std::atomic_int gen_thread_idx(0);
 volatile auto fake_init = []() {
-    google::InitGoogleLogging("./wtdbg");
+    // google::InitGoogleLogging("./wtdbg");
     return 0;
 }();
 
@@ -29,7 +29,7 @@ const obj_desc_t kbm_read_t_obj_desc = {
 void map_kbm(KBMAux *aux) {
     RETURN_IF_TEST(aux->par, 4);
     KBM *kbm = aux->kbm;
-    LOG(INFO) << "hptr" << aux->hptr << " bmlem" << aux->bmlen;
+    // LOG(INFO) << "hptr" << aux->hptr << " bmlem" << aux->bmlen;
 
     breakpoint();
     for(; aux->hptr < aux->bmlen; aux->hptr++) {
