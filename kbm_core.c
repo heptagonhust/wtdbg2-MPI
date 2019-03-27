@@ -2,7 +2,7 @@
 #include "kbm_defines.h"
 KBMPar *init_kbmpar() {
     KBMPar *par;
-    par = (KBMPar*)malloc(sizeof(KBMPar));
+    par = (KBMPar *)malloc(sizeof(KBMPar));
     par->rd_len_order = 0;
     par->use_kf = 0;
     par->min_bin_degree = 2;
@@ -35,11 +35,10 @@ void free_kbmpar(KBMPar *par) {
     free(par);
 }
 
-
 KBM *init_kbm(KBMPar *par) {
     KBM *kbm;
     u4i i;
-    kbm = (KBM*)malloc(sizeof(KBM));
+    kbm = (KBM *)malloc(sizeof(KBM));
     kbm->flags = 0;
     kbm->par = par;
     kbm->rdseqs = init_basebank();
@@ -134,7 +133,7 @@ void push_kbm(KBM *kbm, char *tag, int taglen, char *seq, u4i seqlen) {
     kbm_read_t *rd;
     char *ptr;
     if(taglen) {
-        ptr = (char*)malloc(taglen + 1);
+        ptr = (char *)malloc(taglen + 1);
         memcpy(ptr, tag, taglen);
         ptr[taglen] = 0;
     } else {
@@ -154,11 +153,11 @@ void push_kbm(KBM *kbm, char *tag, int taglen, char *seq, u4i seqlen) {
     }
 }
 
-void bitpush_kbm(KBM *kbm, char *tag, int taglen, u8i *seqs, u8i seqoff,                               u4i seqlen) {
+void bitpush_kbm(KBM *kbm, char *tag, int taglen, u8i *seqs, u8i seqoff, u4i seqlen) {
     kbm_read_t *rd;
     char *ptr;
     if(taglen) {
-        ptr = (char*)malloc(taglen + 1);
+        ptr = (char *)malloc(taglen + 1);
         memcpy(ptr, tag, taglen);
         ptr[taglen] = 0;
     } else {
@@ -260,7 +259,8 @@ KBM *clone_seqs_kbm(KBM *src, KBMPar *par) {
 }
 
 // rs[0]->n_head MUST >= 1
-void split_FIXP_kmers_kbm(BaseBank *rdseqs, u8i offset, u4i length,                                        u1i ksize, u1i psize, u4i kmod, kmeroffv *rs[2]) {
+void split_FIXP_kmers_kbm(BaseBank *rdseqs, u8i offset, u4i length, u1i ksize, u1i psize,
+                          u4i kmod, kmeroffv *rs[2]) {
     kmer_off_t *kp;
     u8i kmer, krev, hv, npz, kmask, p, pmask;
     u4i ki, npl;
@@ -719,7 +719,7 @@ void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat) {
     //}
     //if(kbm->par->kmin <= 1) kbm->par->use_kf = 0;
     //kbm->kfs = kbm->par->use_kf? calloc(KBM_KF_SIZE / 4 / 8, 8) : NULL;
-    hash_locks = (pthread_mutex_t*)calloc(KBM_N_HASH, sizeof(pthread_mutex_t));
+    hash_locks = (pthread_mutex_t *)calloc(KBM_N_HASH, sizeof(pthread_mutex_t));
     thread_beg_init(midx, ncpu);
     midx->kbm = kbm;
     midx->beg = beg;
@@ -739,9 +739,9 @@ void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat) {
         fprintf(KBM_LOGF, "\r%llu bins\n", end - beg);
         fflush(KBM_LOGF);
     }
-    kcnts = (u8i*)calloc(MAX, sizeof(u8i));
+    kcnts = (u8i *)calloc(MAX, sizeof(u8i));
     thread_beg_iter(midx);
-    midx->cnts = (u8i*)calloc(MAX, sizeof(u8i));
+    midx->cnts = (u8i *)calloc(MAX, sizeof(u8i));
     midx->task = 3;    // counting raw kmers
     thread_wake(midx);
     thread_end_iter(midx);
@@ -761,7 +761,7 @@ void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat) {
     }
     if(kmstat) {
         u8i *_kcnts;
-        _kcnts = (u8i*)malloc(200 * sizeof(u8i));
+        _kcnts = (u8i *)malloc(200 * sizeof(u8i));
         for(i = 0; i < 200; i++) {
             _kcnts[i] = (i + 1) * kcnts[i];
         }
@@ -1057,7 +1057,7 @@ void simple_index_kbm(KBM *kbm, u8i beg, u8i end) {
 
 KBMDP *init_kbmdp() {
     KBMDP *dp;
-    dp = (KBMDP*)malloc(sizeof(KBMDP));
+    dp = (KBMDP *)malloc(sizeof(KBMDP));
     dp->kms = init_kbmdpev(1024);
     dp->km_len = 0;
     dp->cmask = init_bitvec(1024);
@@ -1119,7 +1119,7 @@ void free_kbmdp(KBMDP *dp) {
 
 KBMAux *init_kbmaux(KBM *kbm) {
     KBMAux *aux;
-    aux = (KBMAux*)malloc(sizeof(KBMAux));
+    aux = (KBMAux *)malloc(sizeof(KBMAux));
     aux->kbm = kbm;
     aux->par = kbm->par;
     aux->qtag = NULL;
@@ -1182,7 +1182,8 @@ void free_kbmaux(KBMAux *aux) {
     free(aux);
 }
 
-void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs,                                   u8i seqoff, u4i seqlen) {
+void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i seqoff,
+                     u4i seqlen) {
     KBM *kbm;
     KBMPar *par;
     kbm_kmer_t *u;
@@ -1392,7 +1393,8 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs,       
     aux->hptr = 0;
 }
 
-void print_exists_index_kbm(KBM *kbm, char *qtag, BaseBank *rdseqs,                                          u8i seqoff, u4i seqlen, kmeroffv *kmers[2],                                          FILE *out) {
+void print_exists_index_kbm(KBM *kbm, char *qtag, BaseBank *rdseqs, u8i seqoff,
+                            u4i seqlen, kmeroffv *kmers[2], FILE *out) {
     KBMPar *par;
     kbm_kmer_t *u;
     kbm_kaux_t *x;
@@ -1698,7 +1700,8 @@ int check_hit_cigar_kbm(kbm_map_t *hit, BitsVec *cigars) {
     return !(x + 1 + hit->qb == hit->qe && y + 1 + hit->tb == hit->te);
 }
 
-void print_hit_kbm(KBM *kbm, char *qtag, u4i qlen, kbm_map_t *hit,                                 BitsVec *cigars, String *_str, FILE *out) {
+void print_hit_kbm(KBM *kbm, char *qtag, u4i qlen, kbm_map_t *hit, BitsVec *cigars,
+                   String *_str, FILE *out) {
     String *str;
     u8i coff;
     u4i clen, len, bt, _bt;
@@ -1819,9 +1822,6 @@ int _dp_path2map_kbm(KBMAux *aux, int dir) {
     return ret;
 }
 
-
-
-
 // KBM's tag2idx is wrongly loaded, need to be corrected
 void rebuild_tag2idx_kbm(void *_kbm, size_t aux) {
     KBM *kbm;
@@ -1838,7 +1838,8 @@ void rebuild_tag2idx_kbm(void *_kbm, size_t aux) {
     kbm->flags |= 1LLU << 0;
 }
 
-int simple_chain_all_maps_kbm(kbm_map_t *srcs, u4i size,                                            BitsVec *src_cigars, kbm_map_t *dst,                                            BitsVec *dst_cigars, float max_aln_var) {
+int simple_chain_all_maps_kbm(kbm_map_t *srcs, u4i size, BitsVec *src_cigars,
+                              kbm_map_t *dst, BitsVec *dst_cigars, float max_aln_var) {
     kbm_map_t *hit;
     u4i i, x, y, z, f;
     if(size < 2) return 0;
@@ -1914,13 +1915,13 @@ size_t kbm_obj_desc_cnt(void *kbm, int idx) {
         return 1;
 }
 const obj_desc_t kbmreadv_deep_obj_desc = {.tag = "kbmreadv_deep_obj_desc",
-                                                  .size = sizeof(kbmreadv),
-                                                  .n_child = 1,
-                                                  .mem_type = {1},
-                                                  .addr = {offsetof(kbmreadv, buffer)},
-                                                  .desc = {&kbm_read_t_obj_desc},
-                                                  .cnt = kbmreadv_deep_obj_desc_cnt,
-                                                  .post = NULL};
+                                           .size = sizeof(kbmreadv),
+                                           .n_child = 1,
+                                           .mem_type = {1},
+                                           .addr = {offsetof(kbmreadv, buffer)},
+                                           .desc = {&kbm_read_t_obj_desc},
+                                           .cnt = kbmreadv_deep_obj_desc_cnt,
+                                           .post = NULL};
 const obj_desc_t kbm_obj_desc = {
     .tag = "kbm_obj_desc",
     .size = sizeof(KBM),
@@ -1936,6 +1937,5 @@ const obj_desc_t kbm_obj_desc = {
     kbm_obj_desc_cnt,
     rebuild_tag2idx_kbm};
 // Please note that, kbm->tag2idx is not functional after mem_load, because we use cuhash_obj_desc instread of cuhash_deep_obj_desc
-
 
 #include "kbm_opt.h"

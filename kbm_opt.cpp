@@ -14,11 +14,10 @@ const obj_desc_t kbm_read_t_obj_desc = {
     {offsetof(kbm_read_t, tag)}, {&OBJ_DESC_CHAR_ARRAY}, NULL, NULL};
 
 void map_kbm(KBMAux *aux) {
-#ifdef TEST_MODE
-    if(aux->par->test_mode >= 4) return;
-#endif
+    RETURN_IF_TEST(aux->par, 4);
     KBM *kbm = aux->kbm;
     LOG(INFO) << "hptr" << aux->hptr << " bmlem" << aux->bmlen;
+
     for(; aux->hptr < aux->bmlen; aux->hptr++) {
         if(aux->hptr - aux->bmoff >= aux->nheap) {
             aux->bmoff += aux->nheap;
@@ -29,23 +28,23 @@ void map_kbm(KBMAux *aux) {
             // easy gpu aux->refsy
             for(int i = 0; i < aux->refs->size; i++) {
                 kbm_ref_t *ref = ref_kbmrefv(aux->refs, i);
-                // if or bug
-                while(ref->boff < ref->bend) {
+                if(ref->boff < ref->bend) {
                     int hidx = ref->bidx / aux->bmcnt;
                     int heap_id = hidx - aux->bmoff;
                     if(heap_id < aux->nheap) {
                         push_u4v(aux->heaps[heap_id], i);
                     }
-                    break;
                 }
             }
         }
         u4v *heap = aux->heaps[aux->hptr - aux->bmoff];
+
         if(heap->size == 0) {
             continue;
         }
         clear_kbmdpev(aux->caches[0]);
         clear_kbmdpev(aux->caches[1]);
+
         for(int i = 0; i < heap->size; i++) {
             int idx = heap->buffer[i];
             kbm_ref_t *ref = ref_kbmrefv(aux->refs, idx);
@@ -69,6 +68,7 @@ void map_kbm(KBMAux *aux) {
                 }
             }
         }
+
         NORMAL_AT_TEST(aux->par, 2) {
             if(aux->caches[0]->size * (aux->par->ksize + aux->par->psize) <
                UInt(aux->par->min_mat)) {
@@ -88,6 +88,7 @@ void map_kbm(KBMAux *aux) {
             //sort_array(aux->caches[1]->buffer, aux->caches[1]->size, kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
             // TODO: sort by bidx+koff is more reasonable, need to modify push_kmer_match_kbm too
         }
+
         NORMAL_AT_TEST(aux->par, 1) {
             for(int i = 0; i < 2; i++) {
                 for(int j = 0; j < aux->caches[i]->size; j++) {
