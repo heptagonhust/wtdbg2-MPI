@@ -4,7 +4,7 @@ set(CMAKE_C_FLAGS "-Wall -Wno-unused-but-set-variable -mpopcnt -march=native -Wn
 set(CMAKE_CXX_FLAGS ${CMAKE_C_FLAGS})
 
 add_library(ksw ksw.cpp kbm_opt.cpp kbm_core.cpp debrain.h)
-target_link_libraries(ksw pthread m rt z)
+target_link_libraries(ksw pthread m rt z glog)
 
 add_executable(kbm kbm.cpp)
 add_executable(wtdbg wtdbg.cpp)
