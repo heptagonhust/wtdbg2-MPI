@@ -1390,7 +1390,6 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
             break;
         }
     }
-    aux->hptr = 0;
 }
 
 void print_exists_index_kbm(KBM *kbm, char *qtag, BaseBank *rdseqs, u8i seqoff,
