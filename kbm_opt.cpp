@@ -28,8 +28,7 @@ void map_kbm(KBMAux *aux) {
     auto kbm = aux->kbm;
     auto par = aux->par;
     LOG(INFO) << " bmlem" << aux->bmlen;
-    
-    
+
     breakpoint();
     for(int hptr = 0; hptr < aux->bmlen; hptr++) {
         if(hptr - aux->bmoff >= aux->nheap) {
@@ -66,8 +65,9 @@ void map_kbm(KBMAux *aux) {
                 kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, ref->boff);
                 int pdir = (ref->dir ^ saux->dir);
                 if(aux->par->strand_mask & (0x01 << pdir)) {
-                    push_kbmdpev(aux->caches[pdir], (kbm_dpe_t){ref->poffs[pdir], idx,
-                                                                ref->bidx, saux->koff});
+                    auto entry =
+                        (kbm_dpe_t){ref->poffs[pdir], idx, ref->bidx, saux->koff};
+                    push_kbmdpev(aux->caches[pdir], entry);
                 }
                 ref->boff++;
                 ref->bidx = getval_bidx(kbm, ref->boff);
@@ -92,9 +92,9 @@ void map_kbm(KBMAux *aux) {
                 } else {
                     auto arr = aux->caches[dir]->buffer;
                     auto size = aux->caches[dir]->size;
-//                    sort_array(arr, size,
-//                               kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
-                    std::sort(arr, arr + size, [](kbm_dpe_t& a, kbm_dpe_t& b){
+                    //                    sort_array(arr, size,
+                    //                               kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
+                    std::sort(arr, arr + size, [](kbm_dpe_t &a, kbm_dpe_t &b) {
                         return a.bidx != b.bidx ? a.bidx < b.bidx : a.poff < b.poff;
                     });
                 }
