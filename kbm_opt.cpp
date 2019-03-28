@@ -94,15 +94,7 @@ void map_kbm(KBMAux *aux) {
 //                               kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
                     std::sort(arr, arr + size, [](kbm_dpe_t& a, kbm_dpe_t& b){
                         return a.bidx != b.bidx ? a.bidx < b.bidx : a.poff < b.poff;
-//                        return num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff);
                     });
-                    for(int i = 0; i < size - 1; ++i){
-                        auto& a = arr[i];
-                        auto& b = arr[i + 1];
-                        if(num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff)){
-                            LOG(FATAL) << "wtf";
-                        }
-                    }
                 }
                 //sort_array(aux->caches[dir]->buffer, aux->caches[dir]->size, kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
                 // TODO: sort by bidx+koff is more reasonable, need to modify push_kmer_match_kbm too
