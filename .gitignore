@@ -3,3 +3,4 @@
 .*.swp
 *.dSYM
 data/*
+doc/*
