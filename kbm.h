@@ -66,11 +66,11 @@ static int KBM_LOG = 0;
 #define KBM_MAX_RDGRP1 0x7FFFFF
 #define KBM_MAX_RDGRP2 0xFF
 
-typedef struct {
+struct kbm_read_t {
     u8i rdoff : 40, bincnt : 24;
     u4i rdlen, binoff;
     char *tag;
-} kbm_read_t;
+};
 define_list(kbmreadv, kbm_read_t);
 
 extern const obj_desc_t kbm_read_t_obj_desc;
@@ -83,18 +83,18 @@ extern const obj_desc_t kbmreadv_deep_obj_desc;
 #endif
 #define KBM_MAX_BIN_DEGREE 0x1FFU
 // each BIN takes KBM_BIN_SIZE bp in uncompressed reads
-typedef struct {
+struct kbm_bin_t{
 #if 0
 	u4i ridx:28, off:24, closed:1, degree:11; // off * KBM_BIN_SIZE is the real position
 #endif
     u4i ridx : 30, off : 24, closed : 1,
         degree : 9;    // off * KBM_BIN_SIZE is the real position
-} kbm_bin_t;
+};
 define_list(kbmbinv, kbm_bin_t);
 
-typedef struct {
+struct kbm_bmer_t{
     u4i bidx;
-} kbm_bmer_t;
+} ;
 define_list(kbmbmerv, kbm_bmer_t);
 
 struct kbm_baux_t {
