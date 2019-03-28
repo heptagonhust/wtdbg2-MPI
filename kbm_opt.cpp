@@ -26,6 +26,7 @@ const obj_desc_t kbm_read_t_obj_desc = {
 void map_kbm(KBMAux *aux) {
     RETURN_IF_TEST(aux->par, 4);
     KBM *kbm = aux->kbm;
+    auto par = aux->par;
     LOG(INFO) << " bmlem" << aux->bmlen;
     
     
@@ -83,10 +84,10 @@ void map_kbm(KBMAux *aux) {
         }
 
         breakpoint();
-        NORMAL_AT_TEST(aux->par, 2) {
+        NORMAL_AT_TEST(par, 2) {
             for(int dir = 0; dir < 2; ++dir) {
-                if(aux->caches[dir]->size * (aux->par->ksize + aux->par->psize) <
-                   UInt(aux->par->min_mat)) {
+                if(aux->caches[dir]->size * (par->ksize + par->psize) <
+                   UInt(par->min_mat)) {
                     aux->caches[dir]->size = 0;
                 } else {
                     auto arr = aux->caches[dir]->buffer;
@@ -103,17 +104,17 @@ void map_kbm(KBMAux *aux) {
         }
 
         breakpoint();
-        NORMAL_AT_TEST(aux->par, 1) {
+        NORMAL_AT_TEST(par, 1) {
             for(int dir = 0; dir < 2; dir++) {
                 for(int j = 0; j < aux->caches[dir]->size; j++) {
                     push_kmer_match_kbm(aux, dir, aux->caches[dir]->buffer + j);
                 }
             }
-            if(aux->hits->size >= aux->par->max_hit) return;
+            if(aux->hits->size >= par->max_hit) return;
         }
     }
-    if(aux->par->strand_mask & 0x01) push_kmer_match_kbm(aux, 0, NULL);
-    if(aux->par->strand_mask & 0x02) push_kmer_match_kbm(aux, 1, NULL);
+    if(par->strand_mask & 0x01) push_kmer_match_kbm(aux, 0, NULL);
+    if(par->strand_mask & 0x02) push_kmer_match_kbm(aux, 1, NULL);
 }
 
 void push_kmer_match_kbm(KBMAux *aux, int dir, kbm_dpe_t *p) {
