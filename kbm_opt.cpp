@@ -25,7 +25,7 @@ const obj_desc_t kbm_read_t_obj_desc = {
 
 void map_kbm(KBMAux *aux) {
     RETURN_IF_TEST(aux->par, 4);
-    KBM *kbm = aux->kbm;
+    auto kbm = aux->kbm;
     auto par = aux->par;
     LOG(INFO) << " bmlem" << aux->bmlen;
     
@@ -65,7 +65,7 @@ void map_kbm(KBMAux *aux) {
             while(1) {
                 kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, ref->boff);
                 int pdir = (ref->dir ^ saux->dir);
-                if(((aux->par->strand_mask >> pdir) & 0x01)) {
+                if(aux->par->strand_mask & (0x01 << pdir)) {
                     push_kbmdpev(aux->caches[pdir], (kbm_dpe_t){ref->poffs[pdir], idx,
                                                                 ref->bidx, saux->koff});
                 }
