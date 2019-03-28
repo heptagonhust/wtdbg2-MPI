@@ -607,6 +607,7 @@ if(midx->task == 1) {
                             // repeated kmer within one bin
                         } else {
                             kbm->seeds->buffer[x->off + x->cnt].bidx = mx->bidx & MAX_U4;
+
                             kbm->sauxs->buffer[x->off + x->cnt].bidx = mx->bidx >> 32;
                             kbm->sauxs->buffer[x->off + x->cnt].dir = mx->dir;
                             kbm->sauxs->buffer[x->off + x->cnt].koff = mx->koff >> 1;

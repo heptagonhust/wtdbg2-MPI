@@ -39,9 +39,9 @@ void map_kbm(KBMAux *aux) {
             // for each aux->refs
             // easy gpu aux->refsy
             for(int i = 0; i < aux->refs->size; i++) {
-                kbm_ref_t *ref = ref_kbmrefv(aux->refs, i);
-                if(ref->boff < ref->bend) {
-                    int hidx = ref->bidx / aux->bmcnt;
+                kbm_ref_t *kbm_ref = ref_kbmrefv(aux->refs, i);
+                if(kbm_ref->boff < kbm_ref->bend) {
+                    int hidx = kbm_ref->bidx / aux->bmcnt;
                     int heap_id = hidx - aux->bmoff;
                     if(heap_id < aux->nheap) {
                         push_u4v(aux->heaps[heap_id], i);
@@ -60,20 +60,20 @@ void map_kbm(KBMAux *aux) {
         breakpoint();
         for(int i = 0; i < heap->size; i++) {
             int idx = heap->buffer[i];
-            kbm_ref_t *ref = ref_kbmrefv(aux->refs, idx);
-            while(1) {
-                kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, ref->boff);
-                int pdir = (ref->dir ^ saux->dir);
+            kbm_ref_t *kbm_ref = ref_kbmrefv(aux->refs, idx);
+            for(;;) {
+                kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, kbm_ref->boff);
+                int pdir = (kbm_ref->dir ^ saux->dir);
                 if(aux->par->strand_mask & (0x01 << pdir)) {
                     auto entry =
-                        (kbm_dpe_t){ref->poffs[pdir], idx, ref->bidx, saux->koff};
+                        (kbm_dpe_t){kbm_ref->poffs[pdir], idx, kbm_ref->bidx, saux->koff};
                     push_kbmdpev(aux->caches[pdir], entry);
                 }
-                ref->boff++;
-                ref->bidx = getval_bidx(kbm, ref->boff);
-                if(ref->boff >= ref->bend) break;
+                kbm_ref->boff++;
+                kbm_ref->bidx = getval_bidx(kbm, kbm_ref->boff);
+                if(kbm_ref->boff >= kbm_ref->bend) break;
 
-                int hidx = ref->bidx / aux->bmcnt;
+                int hidx = kbm_ref->bidx / aux->bmcnt;
                 if(hidx > hptr) {
                     if(hidx - aux->bmoff < aux->nheap) {
                         push_u4v(aux->heaps[hidx - aux->bmoff], idx);
