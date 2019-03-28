@@ -275,9 +275,6 @@ struct KBMAux {
     String *str;
 };
 
-// #define getval_bidx(kbm, offset)                          \
-//     ((((u8i)((kbm)->sauxs->buffer[offset].bidx)) << 32) | \
-//      (kbm)->seeds->buffer[offset].bidx)
 
 inline u8i getval_bidx(KBM* kbm, u8i offset){
     return ((u8i)(kbm->sauxs->buffer[offset].bidx) << 32) |
