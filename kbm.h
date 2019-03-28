@@ -269,7 +269,6 @@ struct KBMAux {
     kbmrefv *refs;
     u4v *rank, **heaps;
     u4i nheap;
-    u4i hptr;
     u2i *binmap;
     u4i bmlen, bmoff, bmcnt;
     kbmdpev *caches[2];

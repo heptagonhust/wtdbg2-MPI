@@ -26,11 +26,12 @@ const obj_desc_t kbm_read_t_obj_desc = {
 void map_kbm(KBMAux *aux) {
     RETURN_IF_TEST(aux->par, 4);
     KBM *kbm = aux->kbm;
-    LOG(INFO) << "hptr" << aux->hptr << " bmlem" << aux->bmlen;
-
+    LOG(INFO) << " bmlem" << aux->bmlen;
+    
+    
     breakpoint();
-    for(; aux->hptr < aux->bmlen; aux->hptr++) {
-        if(aux->hptr - aux->bmoff >= aux->nheap) {
+    for(int hptr = 0; hptr < aux->bmlen; hptr++) {
+        if(hptr - aux->bmoff >= aux->nheap) {
             aux->bmoff += aux->nheap;
             for(int i = 0; i < aux->nheap; i++) {
                 clear_u4v(aux->heaps[i]);
@@ -48,7 +49,7 @@ void map_kbm(KBMAux *aux) {
                 }
             }
         }
-        u4v *heap = aux->heaps[aux->hptr - aux->bmoff];
+        u4v *heap = aux->heaps[hptr - aux->bmoff];
 
         if(heap->size == 0) {
             continue;
@@ -72,7 +73,7 @@ void map_kbm(KBMAux *aux) {
                 if(ref->boff >= ref->bend) break;
 
                 int hidx = ref->bidx / aux->bmcnt;
-                if(hidx > aux->hptr) {
+                if(hidx > hptr) {
                     if(hidx - aux->bmoff < aux->nheap) {
                         push_u4v(aux->heaps[hidx - aux->bmoff], idx);
                     }
