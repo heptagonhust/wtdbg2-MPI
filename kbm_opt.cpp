@@ -69,7 +69,7 @@ void map_kbm(KBMAux *aux) {
                                                                 ref->bidx, saux->koff});
                 }
                 ref->boff++;
-                ref->bidx = getval_bidx(aux->kbm, ref->boff);
+                ref->bidx = getval_bidx(kbm, ref->boff);
                 if(ref->boff >= ref->bend) break;
 
                 int hidx = ref->bidx / aux->bmcnt;
