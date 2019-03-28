@@ -1184,17 +1184,14 @@ void free_kbmaux(KBMAux *aux) {
 
 void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i seqoff,
                      u4i seqlen) {
-    KBM *kbm;
-    KBMPar *par;
-    kbm_kmer_t *u;
-    kbm_kaux_t *x;
-    kmer_off_t *f;
-    kbm_ref_t *ref;
+    // kbm_kmer_t *u;
+    // kbm_kaux_t *x;
+    // kmer_off_t *f;
     u8i sidx, bmin, bmax;
     u4i hidx, next;
     u4i i, j, l, tot, mr, pdir;
-    kbm = aux->kbm;
-    par = aux->par;
+    auto kbm = aux->kbm;
+    auto par = aux->par;
     aux->qtag = qtag ? qtag : kbm->reads->buffer[qidx].tag;
     aux->qseqs = rdseqs;
     aux->qsoff = seqoff;
@@ -1228,15 +1225,15 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
     for(i = 0; i < 2; i++) {
         next = 0;
         for(j = 0; j < aux->koffs[i]->size; j++) {
-            f = ref_kmeroffv(aux->koffs[i], j);
+            auto f = ref_kmeroffv(aux->koffs[i], j);
             if(f->closed) continue;
             if(kbm->flags & (1LLU << 2)) f->kidx = 0;
-            u = get_kbmhash(kbm->hashs[f->kidx], f->kmer);
+            auto u = get_kbmhash(kbm->hashs[f->kidx], f->kmer);
             if(u == NULL || u->flt || u->tot < par->kmin) {
                 continue;
             }
-            x = ref_kbmkauxv(kbm->kauxs[f->kidx], offset_kbmhash(kbm->hashs[f->kidx], u));
-            ref = next_ref_kbmrefv(aux->refs);
+            auto x = ref_kbmkauxv(kbm->kauxs[f->kidx], offset_kbmhash(kbm->hashs[f->kidx], u));
+            auto ref = next_ref_kbmrefv(aux->refs);
             ref->mer = u;
             ref->aux = x;
             ref->kidx = f->kidx;
@@ -1291,14 +1288,14 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
             tot += x->cnt;
         }
     }
-    if(0) {
-        //sort_array(aux->refs->buffer, aux->refs->size, kbm_ref_t, num_cmpgt(a.off, b.off));
-        for(i = 0; i < aux->refs->size; i++) {
-            ref = ref_kbmrefv(aux->refs, i);
-            fprintf(KBM_LOGF, "%s\t%d\t%c\t%d\n", aux->qtag, ref->off, "+-"[ref->dir],
-                    (int)ref -> aux -> cnt);
-        }
-    }
+    // if(0) {
+    //     //sort_array(aux->refs->buffer, aux->refs->size, kbm_ref_t, num_cmpgt(a.off, b.off));
+    //     for(i = 0; i < aux->refs->size; i++) {
+    //         auto ref = ref_kbmrefv(aux->refs, i);
+    //         fprintf(KBM_LOGF, "%s\t%d\t%c\t%d\n", aux->qtag, ref->off, "+-"[ref->dir],
+    //                 (int)ref -> aux -> cnt);
+    //     }
+    // }
     if(par->self_aln && aux->solids) {
         // Obsolete
         sort_array(aux->refs->buffer, aux->refs->size, kbm_ref_t,
@@ -1306,7 +1303,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
         tot = 0;
         next = 0;
         for(i = 0; i < aux->refs->size; i++) {
-            ref = ref_kbmrefv(aux->refs, i);
+            auto ref = ref_kbmrefv(aux->refs, i);
             if(ref->closed) {
                 continue;
             } else if(ref->fine) {
@@ -1373,7 +1370,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
     RETURN_IF_TEST(par, 5);
     // init heaps
     for(i = 0; i < aux->refs->size; i++) {
-        ref = ref_kbmrefv(aux->refs, i);
+        auto ref = ref_kbmrefv(aux->refs, i);
         while(ref->boff < ref->bend) {
             if(0) {
                 pdir = (ref->dir ^ kbm->sauxs->buffer[ref->boff].dir);
