@@ -2,25 +2,22 @@
 #include "debrain.h"
 #include <thread>
 #include <iostream>
-// #include <glog/logging.h>
+#include <glog/logging.h>
 #include <algorithm>
 #include <atomic>
 
 std::atomic_int gen_thread_idx(0);
 volatile auto fake_init = []() {
-    // google::InitGoogleLogging("./wtdbg");
+    google::InitGoogleLogging("./wtdbg");
     return 0;
 }();
 
 void breakpoint() {
     thread_local auto thread_idx = gen_thread_idx++;
-    if(thread_idx == 0){
+    if(thread_idx == 0) {
         ++fake_init;
     }
 }
-
-
-
 
 const obj_desc_t kbm_read_t_obj_desc = {
     "kbm_read_t_obj_desc",       sizeof(kbm_read_t),     1,    {1},
@@ -29,7 +26,7 @@ const obj_desc_t kbm_read_t_obj_desc = {
 void map_kbm(KBMAux *aux) {
     RETURN_IF_TEST(aux->par, 4);
     KBM *kbm = aux->kbm;
-    // LOG(INFO) << "hptr" << aux->hptr << " bmlem" << aux->bmlen;
+    LOG(INFO) << "hptr" << aux->hptr << " bmlem" << aux->bmlen;
 
     breakpoint();
     for(; aux->hptr < aux->bmlen; aux->hptr++) {
@@ -86,30 +83,37 @@ void map_kbm(KBMAux *aux) {
 
         breakpoint();
         NORMAL_AT_TEST(aux->par, 2) {
-            if(aux->caches[0]->size * (aux->par->ksize + aux->par->psize) <
-               UInt(aux->par->min_mat)) {
-                aux->caches[0]->size = 0;
-            } else {
-                sort_array(aux->caches[0]->buffer, aux->caches[0]->size, kbm_dpe_t,
-                           num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
+            for(int dir = 0; dir < 2; ++dir) {
+                if(aux->caches[dir]->size * (aux->par->ksize + aux->par->psize) <
+                   UInt(aux->par->min_mat)) {
+                    aux->caches[dir]->size = 0;
+                } else {
+                    auto arr = aux->caches[dir]->buffer;
+                    auto size = aux->caches[dir]->size;
+//                    sort_array(arr, size,
+//                               kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
+                    std::sort(arr, arr + size, [](kbm_dpe_t& a, kbm_dpe_t& b){
+                        return a.bidx != b.bidx ? a.bidx < b.bidx : a.poff < b.poff;
+//                        return num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff);
+                    });
+                    for(int i = 0; i < size - 1; ++i){
+                        auto& a = arr[i];
+                        auto& b = arr[i + 1];
+                        if(num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff)){
+                            LOG(FATAL) << "wtf";
+                        }
+                    }
+                }
+                //sort_array(aux->caches[dir]->buffer, aux->caches[dir]->size, kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
+                // TODO: sort by bidx+koff is more reasonable, need to modify push_kmer_match_kbm too
             }
-            if(aux->caches[1]->size * (aux->par->ksize + aux->par->psize) <
-               UInt(aux->par->min_mat)) {
-                aux->caches[1]->size = 0;
-            } else {
-                sort_array(aux->caches[1]->buffer, aux->caches[1]->size, kbm_dpe_t,
-                           num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
-            }
-            //sort_array(aux->caches[0]->buffer, aux->caches[0]->size, kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
-            //sort_array(aux->caches[1]->buffer, aux->caches[1]->size, kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
-            // TODO: sort by bidx+koff is more reasonable, need to modify push_kmer_match_kbm too
         }
 
         breakpoint();
         NORMAL_AT_TEST(aux->par, 1) {
-            for(int i = 0; i < 2; i++) {
-                for(int j = 0; j < aux->caches[i]->size; j++) {
-                    push_kmer_match_kbm(aux, i, aux->caches[i]->buffer + j);
+            for(int dir = 0; dir < 2; dir++) {
+                for(int j = 0; j < aux->caches[dir]->size; j++) {
+                    push_kmer_match_kbm(aux, dir, aux->caches[dir]->buffer + j);
                 }
             }
             if(aux->hits->size >= aux->par->max_hit) return;
