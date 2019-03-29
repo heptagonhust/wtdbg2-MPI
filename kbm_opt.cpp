@@ -61,6 +61,7 @@ void map_kbm(KBMAux *aux) {
         for(int i = 0; i < heap->size; i++) {
             int idx = heap->buffer[i];
             kbm_ref_t *kbm_ref = ref_kbmrefv(aux->refs, idx);
+            u8i max_bidx = aux->bmcnt * (hptr + 1);
             for(;;) {
                 kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, kbm_ref->boff);
                 int pdir = (kbm_ref->dir ^ saux->dir);
@@ -73,8 +74,8 @@ void map_kbm(KBMAux *aux) {
                 kbm_ref->bidx = getval_bidx(kbm, kbm_ref->boff);
                 if(kbm_ref->boff >= kbm_ref->bend) break;
 
-                int hidx = kbm_ref->bidx / aux->bmcnt;
-                if(hidx > hptr) {
+                if(kbm_ref->bidx >= max_bidx) {
+                    int hidx = kbm_ref->bidx / aux->bmcnt;
                     if(hidx - aux->bmoff < aux->nheap) {
                         push_u4v(aux->heaps[hidx - aux->bmoff], idx);
                     }

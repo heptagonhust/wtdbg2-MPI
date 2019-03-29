@@ -143,7 +143,7 @@
                   [&](const e_type &b, const e_type &a) { return (bool)(is_a_greater_than_b); }); \
     } while(0)
 #define sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \ 
-        dog_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b)
+        ori_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b)
 
 #define ori_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \
     do {                                                         \
