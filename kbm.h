@@ -20,6 +20,7 @@
 #pragma once
 #include "list.h"
 #include "hashset.h"
+#include <vector>
 #include "dna.h"
 #include "filereader.h"
 #include "bitvec.h"
@@ -32,10 +33,13 @@
 #define TEST_MODE
 #ifdef TEST_MODE
 #define NORMAL_AT_TEST(par, level) if(par->test_mode <= level)
-#define RETURN_IF_TEST(par, level) if(par->test_mode >= level)return
+#define RETURN_IF_TEST(par, level) \
+    if(par->test_mode >= level) return
 #else
 #define SKIP_IF_TEST if(1)
-#define RETURN_IF_TEST do{}while(0)
+#define RETURN_IF_TEST \
+    do {               \
+    } while(0)
 #endif
 
 #define KBM_BSIZE 256
@@ -66,51 +70,52 @@ static int KBM_LOG = 0;
 #define KBM_MAX_RDGRP1 0x7FFFFF
 #define KBM_MAX_RDGRP2 0xFF
 
-typedef struct {
+struct kbm_read_t {
     u8i rdoff : 40, bincnt : 24;
     u4i rdlen, binoff;
     char *tag;
-} kbm_read_t;
+};
 define_list(kbmreadv, kbm_read_t);
 
 extern const obj_desc_t kbm_read_t_obj_desc;
 extern const obj_desc_t kbmreadv_deep_obj_desc;
-
-
 
 #if 0
 #define KBM_MAX_BIN_DEGREE 0x7FFU
 #endif
 #define KBM_MAX_BIN_DEGREE 0x1FFU
 // each BIN takes KBM_BIN_SIZE bp in uncompressed reads
-typedef struct {
+struct kbm_bin_t {
 #if 0
 	u4i ridx:28, off:24, closed:1, degree:11; // off * KBM_BIN_SIZE is the real position
 #endif
     u4i ridx : 30, off : 24, closed : 1,
         degree : 9;    // off * KBM_BIN_SIZE is the real position
-} kbm_bin_t;
+};
 define_list(kbmbinv, kbm_bin_t);
 
-typedef struct {
-    u4i bidx;
-} kbm_bmer_t;
-define_list(kbmbmerv, kbm_bmer_t);
+// struct kbm_bmer_t {
+//     u4i bidx;
+// };
+// define_list(kbmbmerv, kbm_bmer_t);
 
-struct kbm_baux_t {
-    u1i bidx;                 // bidx = (kbm_baux_t->bidx << 32 | kbm_bmer_t->bidx)
-    u1i dir : 1, koff : 7;    // koff is the real (offset? >> 1), here offset is +0 or +1
+// struct kbm_baux_t {
+//     u1i bidx;                 // bidx = (kbm_baux_t->bidx << 32 | kbm_bmer_t->bidx)
+//     u1i dir : 1, koff : 7;    // koff is the real (offset? >> 1), here offset is +0 or +1
+// };
+// define_list(kbmbauxv, kbm_baux_t);
+
+// TODO: dog change
+struct kbm_bidxaux_t {
+    u8i bidx : 24, dir : 1, koff : 7;
 };
-define_list(kbmbauxv, kbm_baux_t);
 
-#define getval_bidx(kbm, offset)                          \
-    ((((u8i)((kbm)->sauxs->buffer[offset].bidx)) << 32) | \
-     (kbm)->seeds->buffer[offset].bidx)
+
 
 //#define kbm_kmer_smear(K) ((K) ^ ((K) >> 4) ^ ((K) >> 7) ^ ((K) >> 12))
 #define kbm_kmer_smear(K) ((K) ^ ((K) >> 4) ^ ((K) >> 7))
 
-struct kbm_kmer_t{
+struct kbm_kmer_t {
     u8i mer : 46, tot : 17, flt : 1;
 };
 define_list(kbmkmerv, kbm_kmer_t);
@@ -120,12 +125,12 @@ define_list(kbmkmerv, kbm_kmer_t);
 define_hashtable(kbmhash, kbm_kmer_t, KBM_KMERCODE, KBM_KMEREQUALS, u8i, ITSELF,
                  KBM_KEYEQUALS, kbm_kmer_t *, ITSELF);
 
-struct kbm_kaux_t{
+struct kbm_kaux_t {
     u8i off : 40, cnt : 24;
 };
 define_list(kbmkauxv, kbm_kaux_t);
 
-struct kbm_ref_t{
+struct kbm_ref_t {
     kbm_kmer_t *mer;
     kbm_kaux_t *aux;
     u4i kidx;
@@ -145,23 +150,23 @@ define_list(kbmrefv, kbm_ref_t);
     num_cmpx(refs[a]->bidx, refs[b]->bidx, refs[a].poffs[refs[a].pdir], \
              refs[b].poffs[refs[b].pdir])
 
-struct kbm_cmer_t{
+struct kbm_cmer_t {
     u4i koff;
     u4i kcnt : 8, kmat : 9, boff : 15;    // offset from the start bin_idx
-} ;
+};
 define_list(kbmcmerv, kbm_cmer_t);
 static const kbm_cmer_t KBM_CMER_NULL = {0, 0, 0, 0};
 
-struct kbm_cell_t{
+struct kbm_cell_t {
     u8i beg : 46, mat : 16, bt : 2;
     b2i var;
     u2i gap;
     b4i score;
-} ;
+};
 static const kbm_cell_t KBM_CELL_NULL = {0, 0, 0, 0, 0, 0};
 define_list(kbmcellv, kbm_cell_t);
 
-struct kbm_path_t{
+struct kbm_path_t {
     u8i beg, end;
     u4i mat;
     int score;
@@ -171,16 +176,16 @@ define_list(kbmpathv, kbm_path_t);
 #define kbmpath_hashequals(E1, E2) (E1).beg == (E2).beg
 define_hashset(kbmphash, kbm_path_t, kbmpath_hashcode, kbmpath_hashequals);
 
-struct kbm_map_t{
+struct kbm_map_t {
     u4i qidx : 31, qdir : 1;
     u4i tidx : 31, tdir : 1;
     u8i cgoff : 40, cglen : 24;
     int qb, qe, tb, te;
     int mat, cnt, aln, gap;    // gap is counted in BINs
-} ;
+};
 define_list(kbmmapv, kbm_map_t);
 
-struct KBMPar{
+struct KBMPar {
     int rd_len_order;    // 0
     //int hk; // 0
     int use_kf;                             // 0
@@ -202,12 +207,12 @@ struct KBMPar{
     float aln_var;           // 0.25
     float min_sim;           // kmer similarity: 0.05
     int test_mode;           // see codes
-} ;
+};
 
 static const obj_desc_t kbmpar_obj_desc = {
     "kbmpar_obj_desc", sizeof(KBMPar), 0, {}, {}, {}, NULL, NULL};
 
-struct KBM{
+struct KBM {
     u8i flags;    // 64 bits, 0: mem_load all, 1: mem_load rdseqs+reads; 2: Single Hash Mode;3-63: unused
     KBMPar *par;
     BaseBank *rdseqs;
@@ -216,15 +221,16 @@ struct KBM{
     kbmbinv *bins;
     BitVec *binmarks;
     //u8i      *kfs;
-    kbmbmerv *seeds;
-    kbmbauxv *sauxs;
+    // kbmbmerv *seeds;
+    // kbmbauxv *sauxs;
+    std::vector<kbm_bidxaux_t> vec_bidxaux;
     kbmhash *hashs[KBM_N_HASH];
     kbmkauxv *kauxs[KBM_N_HASH];
-} ;
+};
 
 extern const obj_desc_t kbm_obj_desc;
 
-struct kbm_dpe_t{
+struct kbm_dpe_t {
 #if 0
 	u4i poff, bidx;
 	u4i refidx:26, koff:6;
@@ -235,7 +241,7 @@ struct kbm_dpe_t{
 };
 define_list(kbmdpev, kbm_dpe_t);
 
-struct KBMDP{
+struct KBMDP {
     kbmdpev *kms;    // kmer offset in query and bidx
     u4i km_len;
     BitVec *cmask;    // bit for kbm_cmer_t
@@ -249,7 +255,7 @@ struct KBMDP{
     u8i last_bidx;
 };
 
-struct kmer_off_t{
+struct kmer_off_t {
     u8i kmer;
     u4i off;
     u4i kidx : 30, dir : 1, closed : 1;
@@ -269,7 +275,6 @@ struct KBMAux {
     kbmrefv *refs;
     u4v *rank, **heaps;
     u4i nheap;
-    u4i hptr;
     u2i *binmap;
     u4i bmlen, bmoff, bmcnt;
     kbmdpev *caches[2];
@@ -280,6 +285,7 @@ struct KBMAux {
     String *str;
 };
 
+#define getval_bidx(kbm, offset) (kbm)->vec_bidxaux[offset].bidx
 
 #include "kbm_opt.h"
 #include "kbm_defines.h"

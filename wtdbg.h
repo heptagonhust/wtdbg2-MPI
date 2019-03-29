@@ -1545,7 +1545,7 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
     mdbg->alno = alno;
     thread_end_init(mdbg);
     in = g->corr_mode ? 1 : g->num_index;
-    if(g->kbm->seeds->size) {
+    if(g->kbm->vec_bidxaux.size()) {
         reset_kbm = 0;
         if(in > 1) {
             fprintf(KBM_LOGF, " ** WARNNING: change number of kbm index to 1 **\n");

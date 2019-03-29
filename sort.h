@@ -17,11 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SORT_RJ_H
-#define __SORT_RJ_H
-
-#include <stdio.h>
-#include <stdlib.h>
+#pragma once
+#include <algorithm>
 
 #define cmp_2nums_proc(a, b) \
     if((a) < (b))            \
@@ -139,107 +136,119 @@
         }                                                                   \
     } while(0)
 
+#define dog_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \
+    do {                                                             \
+        e_type *dog_arr = rs_ary;                                    \
+        std::stable_sort(dog_arr, dog_arr + (rs_size),               \
+                         [&](const e_type &b, const e_type &a) {     \
+                             return (bool)(is_a_greater_than_b);     \
+                         });                                         \
+    } while(0)
 #define sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \
-    do {                                                         \
-        e_type *_rs;                                             \
-        _rs = (e_type *)(rs_ary);                                \
-        size_t _qsort_n;                                         \
-        _qsort_n = rs_size;                                      \
-        size_t s, e, i, j, m, stack[64][2], x;                   \
-        e_type p, t, a, b;                                       \
-        if(_qsort_n < 2) break;                                  \
-        x = 0;                                                   \
-        stack[x][0] = 0;                                         \
-        stack[x][1] = _qsort_n - 1;                              \
-        x++;                                                     \
-        while(x) {                                               \
-            x--;                                                 \
-            s = stack[x][0];                                     \
-            e = stack[x][1];                                     \
-            m = s + (e - s) / 2;                                 \
-            a = _rs[s];                                          \
-            b = _rs[m];                                          \
-            if(is_a_greater_than_b) {                            \
-                t = _rs[s];                                      \
-                _rs[s] = _rs[m];                                 \
-                _rs[m] = t;                                      \
-            }                                                    \
-            a = _rs[m];                                          \
-            b = _rs[e];                                          \
-            if(is_a_greater_than_b) {                            \
-                t = _rs[e];                                      \
-                _rs[e] = _rs[m];                                 \
-                _rs[m] = t;                                      \
-                a = _rs[s];                                      \
-                b = _rs[m];                                      \
-                if(is_a_greater_than_b) {                        \
-                    t = _rs[s];                                  \
-                    _rs[s] = _rs[m];                             \
-                    _rs[m] = t;                                  \
-                }                                                \
-            }                                                    \
-            p = _rs[m];                                          \
-            i = s + 1;                                           \
-            j = e - 1;                                           \
-            while(1) {                                           \
-                a = p;                                           \
-                while(b = _rs[i], (is_a_greater_than_b)) i++;    \
-                b = p;                                           \
-                while(a = _rs[j], (is_a_greater_than_b)) j--;    \
-                if(i < j) {                                      \
-                    t = _rs[i];                                  \
-                    _rs[i] = _rs[j];                             \
-                    _rs[j] = t;                                  \
-                    i++;                                         \
-                    j--;                                         \
-                } else                                           \
-                    break;                                       \
-            }                                                    \
-            if(i == j) {                                         \
-                i++;                                             \
-                j--;                                             \
-            }                                                    \
-            if(j - s > e - i) {                                  \
-                if(s + 4 < j) {                                  \
-                    stack[x][0] = s;                             \
-                    stack[x][1] = j;                             \
-                    x++;                                         \
-                }                                                \
-                if(i + 4 < e) {                                  \
-                    stack[x][0] = i;                             \
-                    stack[x][1] = e;                             \
-                    x++;                                         \
-                }                                                \
-            } else {                                             \
-                if(i + 4 < e) {                                  \
-                    stack[x][0] = i;                             \
-                    stack[x][1] = e;                             \
-                    x++;                                         \
-                }                                                \
-                if(s + 4 < j) {                                  \
-                    stack[x][0] = s;                             \
-                    stack[x][1] = j;                             \
-                    x++;                                         \
-                }                                                \
-            }                                                    \
-        }                                                        \
-        for(i = 0; i < _qsort_n; i++) {                          \
-            x = 0;                                               \
-            for(j = _qsort_n - 1; j > i; j--) {                  \
-                a = _rs[j - 1];                                  \
-                b = _rs[j];                                      \
-                if(is_a_greater_than_b) {                        \
-                    t = _rs[j - 1];                              \
-                    _rs[j - 1] = _rs[j];                         \
-                    _rs[j] = t;                                  \
-                    x = 1;                                       \
-                }                                                \
-            }                                                    \
-            if(x == 0) break;                                    \
-        }                                                        \
+        dog_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b)
+
+#define ori_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \
+    do {                                                             \
+        e_type *_rs;                                                 \
+        _rs = (e_type *)(rs_ary);                                    \
+        size_t _qsort_n;                                             \
+        _qsort_n = rs_size;                                          \
+        size_t s, e, i, j, m, stack[64][2], x;                       \
+        e_type p, t, a, b;                                           \
+        if(_qsort_n < 2) break;                                      \
+        x = 0;                                                       \
+        stack[x][0] = 0;                                             \
+        stack[x][1] = _qsort_n - 1;                                  \
+        x++;                                                         \
+        while(x) {                                                   \
+            x--;                                                     \
+            s = stack[x][0];                                         \
+            e = stack[x][1];                                         \
+            m = s + (e - s) / 2;                                     \
+            a = _rs[s];                                              \
+            b = _rs[m];                                              \
+            if(is_a_greater_than_b) {                                \
+                t = _rs[s];                                          \
+                _rs[s] = _rs[m];                                     \
+                _rs[m] = t;                                          \
+            }                                                        \
+            a = _rs[m];                                              \
+            b = _rs[e];                                              \
+            if(is_a_greater_than_b) {                                \
+                t = _rs[e];                                          \
+                _rs[e] = _rs[m];                                     \
+                _rs[m] = t;                                          \
+                a = _rs[s];                                          \
+                b = _rs[m];                                          \
+                if(is_a_greater_than_b) {                            \
+                    t = _rs[s];                                      \
+                    _rs[s] = _rs[m];                                 \
+                    _rs[m] = t;                                      \
+                }                                                    \
+            }                                                        \
+            p = _rs[m];                                              \
+            i = s + 1;                                               \
+            j = e - 1;                                               \
+            while(1) {                                               \
+                a = p;                                               \
+                while(b = _rs[i], (is_a_greater_than_b)) i++;        \
+                b = p;                                               \
+                while(a = _rs[j], (is_a_greater_than_b)) j--;        \
+                if(i < j) {                                          \
+                    t = _rs[i];                                      \
+                    _rs[i] = _rs[j];                                 \
+                    _rs[j] = t;                                      \
+                    i++;                                             \
+                    j--;                                             \
+                } else                                               \
+                    break;                                           \
+            }                                                        \
+            if(i == j) {                                             \
+                i++;                                                 \
+                j--;                                                 \
+            }                                                        \
+            if(j - s > e - i) {                                      \
+                if(s + 4 < j) {                                      \
+                    stack[x][0] = s;                                 \
+                    stack[x][1] = j;                                 \
+                    x++;                                             \
+                }                                                    \
+                if(i + 4 < e) {                                      \
+                    stack[x][0] = i;                                 \
+                    stack[x][1] = e;                                 \
+                    x++;                                             \
+                }                                                    \
+            } else {                                                 \
+                if(i + 4 < e) {                                      \
+                    stack[x][0] = i;                                 \
+                    stack[x][1] = e;                                 \
+                    x++;                                             \
+                }                                                    \
+                if(s + 4 < j) {                                      \
+                    stack[x][0] = s;                                 \
+                    stack[x][1] = j;                                 \
+                    x++;                                             \
+                }                                                    \
+            }                                                        \
+        }                                                            \
+        for(i = 0; i < _qsort_n; i++) {                              \
+            x = 0;                                                   \
+            for(j = _qsort_n - 1; j > i; j--) {                      \
+                a = _rs[j - 1];                                      \
+                b = _rs[j];                                          \
+                if(is_a_greater_than_b) {                            \
+                    t = _rs[j - 1];                                  \
+                    _rs[j - 1] = _rs[j];                             \
+                    _rs[j] = t;                                      \
+                    x = 1;                                           \
+                }                                                    \
+            }                                                        \
+            if(x == 0) break;                                        \
+        }                                                            \
     } while(0)
 
-#define dog_psort_array(rs_ary, rs_size, e_type, ncpu, is_a_greater_than_b) sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) 
+#define dog_psort_array(rs_ary, rs_size, e_type, ncpu, is_a_greater_than_b) \
+    sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b)
 
 #define sort_array_adv(rs_size, is_a_greater_than_b, swap_expr) \
     do {                                                        \
@@ -631,8 +640,8 @@
         int *flags, i, min;                                                           \
         size_t ret;                                                                   \
         ret = 0;                                                                      \
-        es = (e_type*)malloc(sizeof(e_type) * n);                                              \
-        flags = (int*)malloc(sizeof(int) * n);                                              \
+        es = (e_type *)malloc(sizeof(e_type) * n);                                    \
+        flags = (int *)malloc(sizeof(int) * n);                                       \
         for(i = 0; i < n; i++) flags[i] = 0;                                          \
         while(1) {                                                                    \
             min = -1;                                                                 \
@@ -764,5 +773,3 @@
         }                                                                        \
         _bs_ret = _bs_i;                                                         \
     } while(0)
-
-#endif
