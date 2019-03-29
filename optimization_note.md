@@ -10,4 +10,6 @@
 3. `push_kbmdpev(aux->caches[pdir], (kbm_dpe_t){ref->poffs[pdir], idx, ref->bidx, saux->koff})`
     - seems to be the simliar reason 
     - investigate it later
+    - maybe redundancy. 
+
 
