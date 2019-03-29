@@ -64,6 +64,7 @@ void map_kbm(KBMAux *aux) {
             kbm_ref_t *kbm_ref = ref_kbmrefv(aux->refs, idx);
             u8i max_bidx = aux->bmcnt * (hptr + 1);
             u8i boff = kbm_ref->boff; 
+            // #pragma unroll(8)
             for(;boff < kbm_ref->bend; ++boff) {
                 // auto saux = ref_kbmbauxv(kbm->sauxs, boff);
                 auto bidxaux = kbm->vec_bidxaux[boff];
