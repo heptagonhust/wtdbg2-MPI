@@ -20,6 +20,7 @@
 #pragma once
 #include "list.h"
 #include "hashset.h"
+#include <vector>
 #include "dna.h"
 #include "filereader.h"
 #include "bitvec.h"
@@ -32,10 +33,13 @@
 #define TEST_MODE
 #ifdef TEST_MODE
 #define NORMAL_AT_TEST(par, level) if(par->test_mode <= level)
-#define RETURN_IF_TEST(par, level) if(par->test_mode >= level)return
+#define RETURN_IF_TEST(par, level) \
+    if(par->test_mode >= level) return
 #else
 #define SKIP_IF_TEST if(1)
-#define RETURN_IF_TEST do{}while(0)
+#define RETURN_IF_TEST \
+    do {               \
+    } while(0)
 #endif
 
 #define KBM_BSIZE 256
@@ -90,16 +94,21 @@ struct kbm_bin_t {
 };
 define_list(kbmbinv, kbm_bin_t);
 
-struct kbm_bmer_t {
-    u4i bidx;
-};
-define_list(kbmbmerv, kbm_bmer_t);
+// struct kbm_bmer_t {
+//     u4i bidx;
+// };
+// define_list(kbmbmerv, kbm_bmer_t);
 
-struct kbm_baux_t {
-    u1i bidx;                 // bidx = (kbm_baux_t->bidx << 32 | kbm_bmer_t->bidx)
-    u1i dir : 1, koff : 7;    // koff is the real (offset? >> 1), here offset is +0 or +1
+// struct kbm_baux_t {
+//     u1i bidx;                 // bidx = (kbm_baux_t->bidx << 32 | kbm_bmer_t->bidx)
+//     u1i dir : 1, koff : 7;    // koff is the real (offset? >> 1), here offset is +0 or +1
+// };
+// define_list(kbmbauxv, kbm_baux_t);
+
+// TODO: dog change
+struct kbm_bidxaux_t {
+    u8i bidx : 24, dir : 1, koff : 7;
 };
-define_list(kbmbauxv, kbm_baux_t);
 
 
 
@@ -212,15 +221,16 @@ struct KBM {
     kbmbinv *bins;
     BitVec *binmarks;
     //u8i      *kfs;
-    kbmbmerv *seeds;
-    kbmbauxv *sauxs;
+    // kbmbmerv *seeds;
+    // kbmbauxv *sauxs;
+    std::vector<kbm_bidxaux_t> vec_bidxaux;
     kbmhash *hashs[KBM_N_HASH];
     kbmkauxv *kauxs[KBM_N_HASH];
-} ;
+};
 
 extern const obj_desc_t kbm_obj_desc;
 
-struct kbm_dpe_t{
+struct kbm_dpe_t {
 #if 0
 	u4i poff, bidx;
 	u4i refidx:26, koff:6;
@@ -231,7 +241,7 @@ struct kbm_dpe_t{
 };
 define_list(kbmdpev, kbm_dpe_t);
 
-struct KBMDP{
+struct KBMDP {
     kbmdpev *kms;    // kmer offset in query and bidx
     u4i km_len;
     BitVec *cmask;    // bit for kbm_cmer_t
@@ -245,7 +255,7 @@ struct KBMDP{
     u8i last_bidx;
 };
 
-struct kmer_off_t{
+struct kmer_off_t {
     u8i kmer;
     u4i off;
     u4i kidx : 30, dir : 1, closed : 1;
@@ -275,12 +285,9 @@ struct KBMAux {
     String *str;
 };
 
-
-inline u8i getval_bidx(KBM* kbm, u8i offset){
-    return ((u8i)(kbm->sauxs->buffer[offset].bidx) << 32) |
-            kbm->seeds->buffer[offset].bidx;
+inline u8i getval_bidx(KBM *kbm, u8i offset) {
+    return kbm->vec_bidxaux[offset].bidx;
 }
-
 
 #include "kbm_opt.h"
 #include "kbm_defines.h"
