@@ -47,8 +47,7 @@ KBM *init_kbm(KBMPar *par) {
     kbm->bins = init_kbmbinv(64);
     kbm->binmarks = init_bitvec(1024);
     //kbm->kfs = NULL;
-    kbm->seeds = init_kbmbmerv(64);
-    kbm->sauxs = init_kbmbauxv(64);
+    kbm->vec_bidxaux.reserve(64);
     for(i = 0; i < KBM_N_HASH; i++) kbm->hashs[i] = init_kbmhash(1023);
     for(i = 0; i < KBM_N_HASH; i++) kbm->kauxs[i] = init_kbmkauxv(64);
     return kbm;
@@ -69,8 +68,6 @@ void free_kbm(KBM *kbm) {
     free_kbmbinv(kbm->bins);
     free_bitvec(kbm->binmarks);
     //if(kbm->kfs) free(kbm->kfs);
-    free_kbmbmerv(kbm->seeds);
-    free_kbmbauxv(kbm->sauxs);
     for(i = 0; i < KBM_N_HASH; i++) free_kbmhash(kbm->hashs[i]);
     for(i = 0; i < KBM_N_HASH; i++) free_kbmkauxv(kbm->kauxs[i]);
     free(kbm);
@@ -91,10 +88,11 @@ void reset_index_kbm(KBM *kbm) {
             kbm->kauxs[i] = init_kbmkauxv(64);
         }
     }
-    free_kbmbmerv(kbm->seeds);
-    kbm->seeds = init_kbmbmerv(64);
-    free_kbmbauxv(kbm->sauxs);
-    kbm->sauxs = init_kbmbauxv(64);
+    // free_kbmbmerv(kbm->seeds);
+    // kbm->seeds = init_kbmbmerv(64);
+    // free_kbmbauxv(kbm->sauxs);
+    // kbm->sauxs = init_kbmbauxv(64);
+    kbm->vec_bidxaux.clear();
     //zeros_bitvec(kbm->binmarks);
 }
 
@@ -119,8 +117,9 @@ void clear_kbm(KBM *kbm) {
         kbm->kauxs[i] = init_kbmkauxv(64);
         if(kbm->flags & 0x04) break;
     }
-    clear_kbmbmerv(kbm->seeds);
-    clear_kbmbauxv(kbm->sauxs);
+    // clear_kbmbmerv(kbm->seeds);
+    // clear_kbmbauxv(kbm->sauxs);
+    kbm->vec_bidxaux.clear();
 }
 
 int cvt_kbm_read_length(u4i seqlen) {
@@ -402,11 +401,11 @@ typedef struct {
 } kbm_midx_t;
 define_list(kbmmidxv, kbm_midx_t);
 
-typedef struct {
-    u8i bidx;
-    kbm_baux_t aux;
-} kbm_tmp_bmer_t;
-define_list(tmpbmerv, kbm_tmp_bmer_t);
+// typedef struct {
+//     u8i bidx;
+//     kbm_baux_t aux;
+// } kbm_tmp_bmer_t;
+// define_list(tmpbmerv, kbm_tmp_bmer_t);
 
 thread_beg_def(midx);
 KBM *kbm;
@@ -428,7 +427,6 @@ kmer_off_t *f;
 kbm_kmer_t *u;
 kbm_kaux_t *x;
 kmeroffv *kmers[2];
-tmpbmerv *bms;
 u8i off;
 u4i bidx, i, j, k, len, ncpu, tidx, kidx;
 int exists;
@@ -439,7 +437,6 @@ kmers[0] = adv_init_kmeroffv(64, 0, 1);
 kmers[1] = adv_init_kmeroffv(64, 0, 1);
 kidxs = (kbmmidxv **)malloc(KBM_N_HASH * sizeof(kbmmidxv *));
 for(i = 0; i < KBM_N_HASH; i++) kidxs[i] = init_kbmmidxv(64);
-bms = init_tmpbmerv(KBM_MAX_KCNT);
 thread_beg_loop(midx);
 if(midx->task == 1) {
     // counting kmers
@@ -603,14 +600,12 @@ if(midx->task == 1) {
                     kbm->bins->buffer[mx->bidx].degree++;
                     if(x->cnt < u->tot) {
                         if(x->cnt && getval_bidx(kbm, x->off + x->cnt - 1) == mx->bidx &&
-                           kbm->sauxs->buffer[x->off + x->cnt - 1].dir == mx->dir) {
+                           kbm->vec_bidxaux[x->off + x->cnt - 1].dir == mx->dir) {
                             // repeated kmer within one bin
                         } else {
-                            kbm->seeds->buffer[x->off + x->cnt].bidx = mx->bidx & MAX_U4;
-
-                            kbm->sauxs->buffer[x->off + x->cnt].bidx = mx->bidx >> 32;
-                            kbm->sauxs->buffer[x->off + x->cnt].dir = mx->dir;
-                            kbm->sauxs->buffer[x->off + x->cnt].koff = mx->koff >> 1;
+                            kbm->vec_bidxaux[x->off + x->cnt].bidx = mx->bidx;
+                            kbm->vec_bidxaux[x->off + x->cnt].dir = mx->dir;
+                            kbm->vec_bidxaux[x->off + x->cnt].koff = mx->koff >> 1;
                             x->cnt++;
                         }
                     }
@@ -634,13 +629,12 @@ if(midx->task == 1) {
                     kbm->bins->buffer[mx->bidx].degree++;
                     if(x->cnt < u->tot) {
                         if(x->cnt && getval_bidx(kbm, x->off + x->cnt - 1) == mx->bidx &&
-                           kbm->sauxs->buffer[x->off + x->cnt - 1].dir == mx->dir) {
+                           kbm->vec_bidxaux[x->off + x->cnt - 1].dir == mx->dir) {
                             // repeated kmer within one bin
                         } else {
-                            kbm->seeds->buffer[x->off + x->cnt].bidx = mx->bidx & MAX_U4;
-                            kbm->sauxs->buffer[x->off + x->cnt].bidx = mx->bidx >> 32;
-                            kbm->sauxs->buffer[x->off + x->cnt].dir = mx->dir;
-                            kbm->sauxs->buffer[x->off + x->cnt].koff = mx->koff >> 1;
+                            kbm->vec_bidxaux[x->off + x->cnt].bidx = mx->bidx;
+                            kbm->vec_bidxaux[x->off + x->cnt].dir = mx->dir;
+                            kbm->vec_bidxaux[x->off + x->cnt].koff = mx->koff >> 1;
                             x->cnt++;
                         }
                     }
@@ -672,26 +666,28 @@ if(midx->task == 1) {
         while((u = ref_iter_kbmhash(kbm->hashs[i]))) {
             x = ref_kbmkauxv(kbm->kauxs[i], offset_kbmhash(kbm->hashs[i], u));
             if(x->cnt < 2) continue;
-            clear_tmpbmerv(bms);
-            for(j = 0; j < x->cnt; j++) {
-                push_tmpbmerv(bms, (kbm_tmp_bmer_t){getval_bidx(kbm, x->off + j),
-                                                    kbm->sauxs->buffer[x->off + j]});
-            }
-            sort_array(bms->buffer, bms->size, kbm_tmp_bmer_t, num_cmpgt(a.bidx, b.bidx));
-            kbm->seeds->buffer[x->off + 0].bidx = bms->buffer[0].bidx & MAX_U4;
-            kbm->sauxs->buffer[x->off + 0].bidx = bms->buffer[0].bidx >> 32;
-            kbm->sauxs->buffer[x->off + 0] = bms->buffer[0].aux;
-            len = 1;
-            for(j = 1; j < x->cnt; j++) {
-                if(bms->buffer[j].bidx < bms->buffer[j - 1].bidx) {
-                    continue;
-                }
-                kbm->seeds->buffer[x->off + len].bidx = bms->buffer[j].bidx & MAX_U4;
-                kbm->sauxs->buffer[x->off + len].bidx = bms->buffer[0].bidx >> 32;
-                kbm->sauxs->buffer[x->off + len] = bms->buffer[j].aux;
-                len++;
-            }
-            x->cnt = len;
+            auto beg_iter = kbm->vec_bidxaux.begin() + x->off;
+            auto end_iter = beg_iter + x->cnt;
+            std::sort(beg_iter, end_iter, [](auto& a, auto& b){return a.bidx < b.bidx;});
+            // for(j = 0; j < x->cnt; j++) {
+            //     push_tmpbmerv(bms, (kbm_tmp_bmer_t){getval_bidx(kbm, x->off + j),
+            //                                         kbm->sauxs->buffer[x->off + j]});
+            // }
+            // sort_array(bms->buffer, bms->size, kbm_tmp_bmer_t, num_cmpgt(a.bidx, b.bidx));
+            // kbm->seeds->buffer[x->off + 0].bidx = bms->buffer[0].bidx & MAX_U4;
+            // kbm->sauxs->buffer[x->off + 0].bidx = bms->buffer[0].bidx >> 32;
+            // kbm->sauxs->buffer[x->off + 0] = bms->buffer[0].aux;
+            // len = 1;
+            // for(j = 1; j < x->cnt; j++) {
+            //     // if(bms->buffer[j].bidx < bms->buffer[j - 1].bidx) {
+            //     //     continue;
+            //     // }
+            //     kbm->seeds->buffer[x->off + len].bidx = bms->buffer[j].bidx & MAX_U4;
+            //     kbm->sauxs->buffer[x->off + len].bidx = bms->buffer[0].bidx >> 32;
+            //     kbm->sauxs->buffer[x->off + len] = bms->buffer[j].aux;
+            //     len++;
+            // }
+            // x->cnt = len;
         }
     }
 }
@@ -700,7 +696,6 @@ free_kmeroffv(kmers[0]);
 free_kmeroffv(kmers[1]);
 for(i = 0; i < KBM_N_HASH; i++) free_kbmmidxv(kidxs[i]);
 free(kidxs);
-free_tmpbmerv(bms);
 thread_end_func(midx);
 
 void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat) {
@@ -710,7 +705,9 @@ void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat) {
     pthread_mutex_t *hash_locks;
     thread_preprocess(midx);
     batch_size = 10000;
-    clear_kbmbmerv(kbm->seeds);
+    // DANGEROUS
+    // clear_kbmbmerv(kbm->seeds);
+    kbm->vec_bidxaux.clear();
     for(i = 0; i < KBM_N_HASH; i++) clear_kbmhash(kbm->hashs[i]);
     kcnts = NULL;
     MAX = KBM_MAX_KCNT;
@@ -863,11 +860,12 @@ void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat) {
     thread_wake(midx);
     thread_end_iter(midx);
     thread_wait_all(midx);
-    clear_and_encap_kbmbmerv(kbm->seeds, off + 1);
-    kbm->seeds->size = off;
-    free_kbmbauxv(kbm->sauxs);
-    kbm->sauxs = init_kbmbauxv(off + 1);
-    kbm->sauxs->size = off;
+    // clear_and_encap_kbmbmerv(kbm->seeds, off + 1);
+    // kbm->seeds->size = off;
+    // free_kbmbauxv(kbm->sauxs);
+    // kbm->sauxs = init_kbmbauxv(off + 1);
+    // kbm->sauxs->size = off;
+    kbm->vec_bidxaux.resize(off);
     kavg = Nrem / (nrem + 1);
     fprintf(KBM_LOGF, "[%s] - Total kmers = %llu\n", date(), ktot);
     fprintf(KBM_LOGF, "[%s] - average kmer depth = %d\n", date(), kavg);
@@ -918,7 +916,7 @@ void simple_index_kbm(KBM *kbm, u8i beg, u8i end) {
     kbm_kmer_t *u;
     kbm_kaux_t *x;
     kmeroffv *kmers[2];
-    tmpbmerv *bms;
+    // tmpbmerv *bms;
     kmer_off_t *f;
     u8i bidx, off;
     u4i i, j, len;
@@ -926,7 +924,7 @@ void simple_index_kbm(KBM *kbm, u8i beg, u8i end) {
     kbm->flags |= 1LLU << 2;
     kmers[0] = adv_init_kmeroffv(64, 0, 1);
     kmers[1] = adv_init_kmeroffv(64, 0, 1);
-    bms = init_tmpbmerv(KBM_MAX_KCNT);
+    // bms = init_tmpbmerv(KBM_MAX_KCNT);
     // count kmers
     {
         for(bidx = beg; bidx < end; bidx++) {
@@ -985,10 +983,12 @@ void simple_index_kbm(KBM *kbm, u8i beg, u8i end) {
                 off += u->tot;
             }
         }
-        clear_and_encap_kbmbmerv(kbm->seeds, off + 1);
-        kbm->seeds->size = off;
-        clear_and_encap_kbmbauxv(kbm->sauxs, off + 1);
-        kbm->sauxs->size = off;
+        // clear_and_encap_kbmbmerv(kbm->seeds, off + 1);
+        // kbm->seeds->size = off;
+        // clear_and_encap_kbmbauxv(kbm->sauxs, off + 1);
+        // kbm->sauxs->size = off;
+        kbm->vec_bidxaux.clear();
+        kbm->vec_bidxaux.resize(off);
     }
     // fill seeds
     {
@@ -1010,13 +1010,12 @@ void simple_index_kbm(KBM *kbm, u8i beg, u8i end) {
                     kbm->bins->buffer[bidx].degree++;
                     if(x->cnt < u->tot) {
                         if(x->cnt && getval_bidx(kbm, x->off + x->cnt - 1) == bidx &&
-                           kbm->sauxs->buffer[x->off + x->cnt - 1].dir == i) {
+                           kbm->vec_bidxaux[x->off + x->cnt - 1].dir == i) {
                             // repeated kmer within one bin
                         } else {
-                            kbm->seeds->buffer[x->off + x->cnt].bidx = bidx & MAX_U4;
-                            kbm->sauxs->buffer[x->off + x->cnt].bidx = bidx >> 32;
-                            kbm->sauxs->buffer[x->off + x->cnt].dir = i;
-                            kbm->sauxs->buffer[x->off + x->cnt].koff = f->off >> 1;
+                            kbm->vec_bidxaux[x->off + x->cnt].bidx = bidx ;
+                            kbm->vec_bidxaux[x->off + x->cnt].dir = i;
+                            kbm->vec_bidxaux[x->off + x->cnt].koff = f->off >> 1;
                             x->cnt++;
                         }
                     }
@@ -1029,31 +1028,34 @@ void simple_index_kbm(KBM *kbm, u8i beg, u8i end) {
         reset_iter_kbmhash(kbm->hashs[0]);
         while((u = ref_iter_kbmhash(kbm->hashs[0]))) {
             x = ref_kbmkauxv(kbm->kauxs[0], offset_kbmhash(kbm->hashs[0], u));
-            clear_tmpbmerv(bms);
-            for(j = 0; j < x->cnt; j++) {
-                push_tmpbmerv(bms, (kbm_tmp_bmer_t){getval_bidx(kbm, x->off + j),
-                                                    kbm->sauxs->buffer[x->off + j]});
-            }
-            sort_array(bms->buffer, bms->size, kbm_tmp_bmer_t, num_cmpgt(a.bidx, b.bidx));
-            kbm->seeds->buffer[x->off + 0].bidx = bms->buffer[0].bidx & MAX_U4;
-            kbm->sauxs->buffer[x->off + 0].bidx = bms->buffer[0].bidx >> 32;
-            kbm->sauxs->buffer[x->off + 0] = bms->buffer[0].aux;
-            len = 1;
-            for(j = 1; j < x->cnt; j++) {
-                if(bms->buffer[j].bidx < bms->buffer[j - 1].bidx) {
-                    continue;
-                }
-                kbm->seeds->buffer[x->off + len].bidx = bms->buffer[j].bidx & MAX_U4;
-                kbm->sauxs->buffer[x->off + len].bidx = bms->buffer[0].bidx >> 32;
-                kbm->sauxs->buffer[x->off + len] = bms->buffer[j].aux;
-                len++;
-            }
-            x->cnt = len;
+            // TODO DANGEROUS
+            // clear_tmpbmerv(bms);
+            // for(j = 0; j < x->cnt; j++) {
+            //     push_tmpbmerv(bms, (kbm_tmp_bmer_t){getval_bidx(kbm, x->off + j),
+            //                                         kbm->sauxs->buffer[x->off + j]});
+            // }
+            // dog_sort_array(bms->buffer, bms->size, kbm_tmp_bmer_t, num_cmpgt(a.bidx, b.bidx));
+            // kbm->seeds->buffer[x->off + 0].bidx = bms->buffer[0].bidx & MAX_U4;
+            // kbm->sauxs->buffer[x->off + 0].bidx = bms->buffer[0].bidx >> 32;
+            // kbm->sauxs->buffer[x->off + 0] = bms->buffer[0].aux;
+            // len = 1;
+            // for(j = 1; j < x->cnt; j++) {
+            //     if(bms->buffer[j].bidx < bms->buffer[j - 1].bidx) {
+            //         continue;
+            //     }
+            //     kbm->seeds->buffer[x->off + len].bidx = bms->buffer[j].bidx & MAX_U4;
+            //     kbm->sauxs->buffer[x->off + len].bidx = bms->buffer[0].bidx >> 32;
+            //     kbm->sauxs->buffer[x->off + len] = bms->buffer[j].aux;
+            //     len++;
+            // }
+            // x->cnt = len;
+            auto beg_iter = kbm->vec_bidxaux.begin() + x->off;
+            std::sort(beg_iter, beg_iter + x->cnt, [](auto& a, auto& b){return a.bidx < b.bidx;});
         }
     }
     free_kmeroffv(kmers[0]);
     free_kmeroffv(kmers[1]);
-    free_tmpbmerv(bms);
+    // free_tmpbmerv(bms);
 }
 
 KBMDP *init_kbmdp() {
@@ -1374,7 +1376,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
         auto ref = ref_kbmrefv(aux->refs, i);
         while(ref->boff < ref->bend) {
             if(0) {
-                pdir = (ref->dir ^ kbm->sauxs->buffer[ref->boff].dir);
+                pdir = (ref->dir ^ kbm->vec_bidxaux[ref->boff].dir);
                 if(((aux->par->strand_mask >> pdir) & 0x01) == 0) {
                     ref->boff++;
                     ref->bidx = getval_bidx(aux->kbm, ref->boff);
@@ -1923,14 +1925,14 @@ const obj_desc_t kbm_obj_desc = {
     .tag = "kbm_obj_desc",
     .size = sizeof(KBM),
     .n_child = 10,
-    .mem_type = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2},
+    .mem_type = {1, 1, 1, 1, 1, 1, /*1, 1,*/ 2, 2},
     .addr = {offsetof(KBM, par), offsetof(KBM, rdseqs), offsetof(KBM, reads),
              offsetof(KBM, tag2idx), offsetof(KBM, bins), offsetof(KBM, binmarks),
-             offsetof(KBM, seeds), offsetof(KBM, sauxs), offsetof(KBM, hashs),
+             /*offsetof(KBM, seeds), offsetof(KBM, sauxs),*/ offsetof(KBM, hashs),
              offsetof(KBM, kauxs)},
     .desc = {&kbmpar_obj_desc, &basebank_obj_desc, &kbmreadv_deep_obj_desc,
-             &cuhash_obj_desc, &kbmbinv_obj_desc, &bitvec_obj_desc, &kbmbmerv_obj_desc,
-             &kbmbauxv_obj_desc, &kbmhash_obj_desc, &kbmkauxv_obj_desc},
+             &cuhash_obj_desc, &kbmbinv_obj_desc, &bitvec_obj_desc, /*&kbmbmerv_obj_desc,
+             &kbmbauxv_obj_desc,*/ &kbmhash_obj_desc, &kbmkauxv_obj_desc},
     .cnt = kbm_obj_desc_cnt,
     .post = rebuild_tag2idx_kbm};
 // Please note that, kbm->tag2idx is not functional after mem_load, because we use cuhash_obj_desc instread of cuhash_deep_obj_desc

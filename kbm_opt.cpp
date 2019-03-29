@@ -65,11 +65,12 @@ void map_kbm(KBMAux *aux) {
             u8i max_bidx = aux->bmcnt * (hptr + 1);
             u8i boff = kbm_ref->boff; 
             for(;boff < kbm_ref->bend; ++boff) {
-                kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, boff);
-                int pdir = (kbm_ref->dir ^ saux->dir);
+                // auto saux = ref_kbmbauxv(kbm->sauxs, boff);
+                auto bidxaux = kbm->vec_bidxaux[boff];
+                int pdir = (kbm_ref->dir ^ bidxaux.dir);
                 if(MASK & (0x01 << pdir)) {
                     auto entry =
-                        (kbm_dpe_t){kbm_ref->poffs[pdir], idx, kbm_ref->bidx, saux->koff};
+                        (kbm_dpe_t){kbm_ref->poffs[pdir], idx, kbm_ref->bidx, bidxaux.koff};
                     push_kbmdpev(aux->caches[pdir], entry);
                 }
                 kbm_ref->bidx = getval_bidx(kbm, boff + 1);
@@ -94,13 +95,13 @@ void map_kbm(KBMAux *aux) {
                 } else {
                     auto arr = aux->caches[dir]->buffer;
                     auto size = aux->caches[dir]->size;
-                    dog_sort_array(arr, size, kbm_dpe_t,
-                               num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
-                    // std::sort(arr, arr + size, [](kbm_dpe_t &a, kbm_dpe_t &b) {
-                    //     return a.bidx != b.bidx ? a.bidx < b.bidx : a.poff < b.poff;
-                    // });
+                    // dog_sort_array(arr, size, kbm_dpe_t,
+                    //            num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
+                    std::sort(arr, arr + size, [](kbm_dpe_t &a, kbm_dpe_t &b) {
+                        return a.bidx != b.bidx ? a.bidx < b.bidx : a.poff < b.poff;
+                    });
                 }
-                //sort_array(aux->caches[dir]->buffer, aux->caches[dir]->size, kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
+                // sort_array(aux->caches[dir]->buffer, aux->caches[dir]->size, kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
                 // TODO: sort by bidx+koff is more reasonable, need to modify push_kmer_match_kbm too
             }
         }
