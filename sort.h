@@ -17,11 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __SORT_RJ_H
-#define __SORT_RJ_H
-
-#include <stdio.h>
-#include <stdlib.h>
+#pragma once
+#include <algorithm>
 
 #define cmp_2nums_proc(a, b) \
     if((a) < (b))            \
@@ -139,7 +136,16 @@
         }                                                                   \
     } while(0)
 
-#define sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \
+#define dog_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b)                 \
+    do {                                                                             \
+        e_type *dog_arr = rs_ary;                                                        \
+        std::sort(dog_arr, dog_arr + (rs_size),                                              \
+                  [&](const e_type &b, const e_type &a) { return (bool)(is_a_greater_than_b); }); \
+    } while(0)
+#define sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \ 
+        dog_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b)
+
+#define ori_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \
     do {                                                         \
         e_type *_rs;                                             \
         _rs = (e_type *)(rs_ary);                                \
@@ -239,7 +245,8 @@
         }                                                        \
     } while(0)
 
-#define dog_psort_array(rs_ary, rs_size, e_type, ncpu, is_a_greater_than_b) sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) 
+#define dog_psort_array(rs_ary, rs_size, e_type, ncpu, is_a_greater_than_b) \
+    sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b)
 
 #define sort_array_adv(rs_size, is_a_greater_than_b, swap_expr) \
     do {                                                        \
@@ -631,8 +638,8 @@
         int *flags, i, min;                                                           \
         size_t ret;                                                                   \
         ret = 0;                                                                      \
-        es = (e_type*)malloc(sizeof(e_type) * n);                                              \
-        flags = (int*)malloc(sizeof(int) * n);                                              \
+        es = (e_type *)malloc(sizeof(e_type) * n);                                    \
+        flags = (int *)malloc(sizeof(int) * n);                                       \
         for(i = 0; i < n; i++) flags[i] = 0;                                          \
         while(1) {                                                                    \
             min = -1;                                                                 \
@@ -764,5 +771,3 @@
         }                                                                        \
         _bs_ret = _bs_i;                                                         \
     } while(0)
-
-#endif

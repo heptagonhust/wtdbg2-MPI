@@ -1028,7 +1028,7 @@ if(_mradix->task == 1) {
     size = _mradix->size;
     klen = _mradix->klen - 8;
     if(size <= MAX_U1) {
-        sort_array(offs, size, u4i,
+        dog_sort_array(offs, size, u4i,
                    cmpgt_seqbits(bb->bits, a + 8, b + 8, klen));    // 8 bp already sorted
     } else {
         memset(counts[1], 0, (MAX_U1 + 1) * sizeof(u4i));
@@ -1062,7 +1062,7 @@ if(_mradix->task == 1) {
             if(counts[0][m] - n < 2) {
                 // nothing to do
             } else {
-                sort_array(offs + n, counts[0][m] - n, u4i,
+                dog_sort_array(offs + n, counts[0][m] - n, u4i,
                            cmpgt_seqbits(bb->bits, a + 8 + 4, b + 8 + 4, klen));
             }
             n = counts[0][m];
@@ -1336,7 +1336,7 @@ static inline u4i num_n50(u4v *lens, FILE *out) {
     u8i tot, cum;
     u4i i, max, min, n50, l50, n90, l90, avg;
     if(lens->size == 0) return 0;
-    sort_array(lens->buffer, lens->size, u4i, num_cmpgt(b, a));
+    dog_sort_array(lens->buffer, lens->size, u4i, num_cmpgt(b, a));
     tot = 0;
     max = lens->buffer[0];
     min = lens->buffer[lens->size - 1];
