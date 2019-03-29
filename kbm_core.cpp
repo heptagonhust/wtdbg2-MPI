@@ -1034,7 +1034,7 @@ void simple_index_kbm(KBM *kbm, u8i beg, u8i end) {
                 push_tmpbmerv(bms, (kbm_tmp_bmer_t){getval_bidx(kbm, x->off + j),
                                                     kbm->sauxs->buffer[x->off + j]});
             }
-            sort_array(bms->buffer, bms->size, kbm_tmp_bmer_t, num_cmpgt(a.bidx, b.bidx));
+            dog_sort_array(bms->buffer, bms->size, kbm_tmp_bmer_t, num_cmpgt(a.bidx, b.bidx));
             kbm->seeds->buffer[x->off + 0].bidx = bms->buffer[0].bidx & MAX_U4;
             kbm->sauxs->buffer[x->off + 0].bidx = bms->buffer[0].bidx >> 32;
             kbm->sauxs->buffer[x->off + 0] = bms->buffer[0].aux;
