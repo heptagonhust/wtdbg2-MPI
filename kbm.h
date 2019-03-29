@@ -285,9 +285,7 @@ struct KBMAux {
     String *str;
 };
 
-inline u8i getval_bidx(KBM *kbm, u8i offset) {
-    return kbm->vec_bidxaux[offset].bidx;
-}
+#define getval_bidx(kbm, offset) (kbm)->vec_bidxaux[offset].bidx
 
 #include "kbm_opt.h"
 #include "kbm_defines.h"
