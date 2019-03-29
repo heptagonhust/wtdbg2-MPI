@@ -63,26 +63,26 @@ void map_kbm(KBMAux *aux) {
             int idx = heap->buffer[i];
             kbm_ref_t *kbm_ref = ref_kbmrefv(aux->refs, idx);
             u8i max_bidx = aux->bmcnt * (hptr + 1);
-            for(;;) {
-                kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, kbm_ref->boff);
+            u8i boff = kbm_ref->boff; 
+            for(;boff < kbm_ref->bend; ++boff) {
+                kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, boff);
                 int pdir = (kbm_ref->dir ^ saux->dir);
                 if(MASK & (0x01 << pdir)) {
                     auto entry =
                         (kbm_dpe_t){kbm_ref->poffs[pdir], idx, kbm_ref->bidx, saux->koff};
                     push_kbmdpev(aux->caches[pdir], entry);
                 }
-                kbm_ref->boff++;
-                kbm_ref->bidx = getval_bidx(kbm, kbm_ref->boff);
-                if(kbm_ref->boff >= kbm_ref->bend) break;
-
-                if(kbm_ref->bidx >= max_bidx) {
-                    int hidx = kbm_ref->bidx / aux->bmcnt;
-                    if(hidx - aux->bmoff < aux->nheap) {
-                        push_u4v(aux->heaps[hidx - aux->bmoff], idx);
-                    }
-                    break;
+                kbm_ref->bidx = getval_bidx(kbm, boff + 1);
+                if(kbm_ref->bidx >= max_bidx) break;
+            }
+            if(boff != kbm_ref->bend){
+                ++boff;
+                int hidx = kbm_ref->bidx / aux->bmcnt;
+                if(hidx - aux->bmoff < aux->nheap) {
+                    push_u4v(aux->heaps[hidx - aux->bmoff], idx);
                 }
             }
+            kbm_ref->boff = boff;
         }
 
         breakpoint();
