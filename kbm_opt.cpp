@@ -25,12 +25,13 @@ const obj_desc_t kbm_read_t_obj_desc = {
 
 void map_kbm(KBMAux *aux) {
     RETURN_IF_TEST(aux->par, 4);
-    KBM *kbm = aux->kbm;
-    LOG(INFO) << "hptr" << aux->hptr << " bmlem" << aux->bmlen;
+    auto kbm = aux->kbm;
+    auto par = aux->par;
+    LOG(INFO) << " bmlem" << aux->bmlen;
 
     breakpoint();
-    for(; aux->hptr < aux->bmlen; aux->hptr++) {
-        if(aux->hptr - aux->bmoff >= aux->nheap) {
+    for(int hptr = 0; hptr < aux->bmlen; hptr++) {
+        if(hptr - aux->bmoff >= aux->nheap) {
             aux->bmoff += aux->nheap;
             for(int i = 0; i < aux->nheap; i++) {
                 clear_u4v(aux->heaps[i]);
@@ -38,9 +39,9 @@ void map_kbm(KBMAux *aux) {
             // for each aux->refs
             // easy gpu aux->refsy
             for(int i = 0; i < aux->refs->size; i++) {
-                kbm_ref_t *ref = ref_kbmrefv(aux->refs, i);
-                if(ref->boff < ref->bend) {
-                    int hidx = ref->bidx / aux->bmcnt;
+                kbm_ref_t *kbm_ref = ref_kbmrefv(aux->refs, i);
+                if(kbm_ref->boff < kbm_ref->bend) {
+                    int hidx = kbm_ref->bidx / aux->bmcnt;
                     int heap_id = hidx - aux->bmoff;
                     if(heap_id < aux->nheap) {
                         push_u4v(aux->heaps[heap_id], i);
@@ -48,7 +49,7 @@ void map_kbm(KBMAux *aux) {
                 }
             }
         }
-        u4v *heap = aux->heaps[aux->hptr - aux->bmoff];
+        u4v *heap = aux->heaps[hptr - aux->bmoff];
 
         if(heap->size == 0) {
             continue;
@@ -57,62 +58,67 @@ void map_kbm(KBMAux *aux) {
         clear_kbmdpev(aux->caches[1]);
 
         breakpoint();
+        auto MASK = aux->par->strand_mask;
         for(int i = 0; i < heap->size; i++) {
             int idx = heap->buffer[i];
-            kbm_ref_t *ref = ref_kbmrefv(aux->refs, idx);
-            while(1) {
-                kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, ref->boff);
-                int pdir = (ref->dir ^ saux->dir);
-                if(((aux->par->strand_mask >> pdir) & 0x01)) {
-                    push_kbmdpev(aux->caches[pdir], (kbm_dpe_t){ref->poffs[pdir], idx,
-                                                                ref->bidx, saux->koff});
+            kbm_ref_t *kbm_ref = ref_kbmrefv(aux->refs, idx);
+            u8i max_bidx = aux->bmcnt * (hptr + 1);
+            u8i boff = kbm_ref->boff; 
+            #pragma unroll(8)
+            for(;boff < kbm_ref->bend; ++boff) {
+                // auto saux = ref_kbmbauxv(kbm->sauxs, boff);
+                auto bidxaux = kbm->vec_bidxaux[boff];
+                int pdir = (kbm_ref->dir ^ bidxaux.dir);
+                if(MASK & (0x01 << pdir)) {
+                    auto entry =
+                        (kbm_dpe_t){kbm_ref->poffs[pdir], idx, kbm_ref->bidx, bidxaux.koff};
+                    push_kbmdpev(aux->caches[pdir], entry);
                 }
-                ref->boff++;
-                ref->bidx = getval_bidx(aux->kbm, ref->boff);
-                if(ref->boff >= ref->bend) break;
-
-                int hidx = ref->bidx / aux->bmcnt;
-                if(hidx > aux->hptr) {
-                    if(hidx - aux->bmoff < aux->nheap) {
-                        push_u4v(aux->heaps[hidx - aux->bmoff], idx);
-                    }
-                    break;
+                kbm_ref->bidx = getval_bidx(kbm, boff + 1);
+                if(kbm_ref->bidx >= max_bidx) break;
+            }
+            if(boff != kbm_ref->bend){
+                ++boff;
+                int hidx = kbm_ref->bidx / aux->bmcnt;
+                if(hidx - aux->bmoff < aux->nheap) {
+                    push_u4v(aux->heaps[hidx - aux->bmoff], idx);
                 }
             }
+            kbm_ref->boff = boff;
         }
 
         breakpoint();
-        NORMAL_AT_TEST(aux->par, 2) {
+        NORMAL_AT_TEST(par, 2) {
             for(int dir = 0; dir < 2; ++dir) {
-                if(aux->caches[dir]->size * (aux->par->ksize + aux->par->psize) <
-                   UInt(aux->par->min_mat)) {
+                if(aux->caches[dir]->size * (par->ksize + par->psize) <
+                   UInt(par->min_mat)) {
                     aux->caches[dir]->size = 0;
                 } else {
                     auto arr = aux->caches[dir]->buffer;
                     auto size = aux->caches[dir]->size;
-//                    sort_array(arr, size,
-//                               kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
-                    std::sort(arr, arr + size, [](kbm_dpe_t& a, kbm_dpe_t& b){
+                    // dog_sort_array(arr, size, kbm_dpe_t,
+                    //            num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
+                    std::sort(arr, arr + size, [](kbm_dpe_t &a, kbm_dpe_t &b) {
                         return a.bidx != b.bidx ? a.bidx < b.bidx : a.poff < b.poff;
                     });
                 }
-                //sort_array(aux->caches[dir]->buffer, aux->caches[dir]->size, kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
+                // sort_array(aux->caches[dir]->buffer, aux->caches[dir]->size, kbm_dpe_t, num_cmpgtx(a.bidx, b.bidx, a.poff, b.poff));
                 // TODO: sort by bidx+koff is more reasonable, need to modify push_kmer_match_kbm too
             }
         }
 
         breakpoint();
-        NORMAL_AT_TEST(aux->par, 1) {
+        NORMAL_AT_TEST(par, 1) {
             for(int dir = 0; dir < 2; dir++) {
                 for(int j = 0; j < aux->caches[dir]->size; j++) {
                     push_kmer_match_kbm(aux, dir, aux->caches[dir]->buffer + j);
                 }
             }
-            if(aux->hits->size >= aux->par->max_hit) return;
+            if(aux->hits->size >= par->max_hit) return;
         }
     }
-    if(aux->par->strand_mask & 0x01) push_kmer_match_kbm(aux, 0, NULL);
-    if(aux->par->strand_mask & 0x02) push_kmer_match_kbm(aux, 1, NULL);
+    if(par->strand_mask & 0x01) push_kmer_match_kbm(aux, 0, NULL);
+    if(par->strand_mask & 0x02) push_kmer_match_kbm(aux, 1, NULL);
 }
 
 void push_kmer_match_kbm(KBMAux *aux, int dir, kbm_dpe_t *p) {
