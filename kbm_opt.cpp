@@ -58,6 +58,7 @@ void map_kbm(KBMAux *aux) {
         clear_kbmdpev(aux->caches[1]);
 
         breakpoint();
+        auto MASK = aux->par->strand_mask;
         for(int i = 0; i < heap->size; i++) {
             int idx = heap->buffer[i];
             kbm_ref_t *kbm_ref = ref_kbmrefv(aux->refs, idx);
@@ -65,7 +66,7 @@ void map_kbm(KBMAux *aux) {
             for(;;) {
                 kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, kbm_ref->boff);
                 int pdir = (kbm_ref->dir ^ saux->dir);
-                if(aux->par->strand_mask & (0x01 << pdir)) {
+                if(MASK & (0x01 << pdir)) {
                     auto entry =
                         (kbm_dpe_t){kbm_ref->poffs[pdir], idx, kbm_ref->bidx, saux->koff};
                     push_kbmdpev(aux->caches[pdir], entry);
