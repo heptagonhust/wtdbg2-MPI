@@ -62,11 +62,12 @@ void map_kbm(KBMAux *aux) {
             int idx = heap->buffer[i];
             kbm_ref_t *kbm_ref = ref_kbmrefv(aux->refs, idx);
             for(;;) {
-                kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, kbm_ref->boff);
-                int pdir = (kbm_ref->dir ^ saux->dir);
+                auto bidxaux = kbm->vec_bidxaux[kbm_ref->boff];
+                // kbm_baux_t *saux = ref_kbmbauxv(kbm->sauxs, kbm_ref->boff);
+                int pdir = (kbm_ref->dir ^ bidxaux.dir);
                 if(aux->par->strand_mask & (0x01 << pdir)) {
                     auto entry =
-                        (kbm_dpe_t){kbm_ref->poffs[pdir], idx, kbm_ref->bidx, saux->koff};
+                        (kbm_dpe_t){kbm_ref->poffs[pdir], idx, kbm_ref->bidx, bidxaux.koff};
                     push_kbmdpev(aux->caches[pdir], entry);
                 }
                 kbm_ref->boff++;
