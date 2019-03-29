@@ -429,7 +429,7 @@ int ksw_extend2(int qlen, const uint8_t *query, int tlen, const uint8_t *target,
                  max_j, max_ins, max_del, max_ie, gscore, max_off;
     if(h0 < 0) h0 = 0;
     // allocate memory
-    qp = malloc(qlen * m);
+    qp = (int8_t*)malloc(qlen * m);
     eh = (eh_t*)calloc(qlen + 1, 8);
     // generate the query profile
     for(k = i = 0; k < m; ++k) {
@@ -564,8 +564,8 @@ int ksw_global2(int qlen, const uint8_t *query, int tlen, const uint8_t *target,
     // allocate memory
     n_col = qlen < 2 * w + 1 ? qlen
                              : 2 * w + 1;    // maximum #columns of the backtrack matrix
-    z = malloc(n_col * tlen);
-    qp = malloc(qlen * m);
+    z = (uint8_t*) malloc(n_col * tlen);
+    qp = (int8_t*) malloc(qlen * m);
     eh = (eh_t*)calloc(qlen + 1, 8);
     // generate the query profile
     for(k = i = 0; k < m; ++k) {

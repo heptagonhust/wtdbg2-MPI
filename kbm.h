@@ -97,10 +97,10 @@ typedef struct {
 } kbm_bmer_t;
 define_list(kbmbmerv, kbm_bmer_t);
 
-typedef struct {
+struct kbm_baux_t {
     u1i bidx;                 // bidx = (kbm_baux_t->bidx << 32 | kbm_bmer_t->bidx)
     u1i dir : 1, koff : 7;    // koff is the real (offset? >> 1), here offset is +0 or +1
-} kbm_baux_t;
+};
 define_list(kbmbauxv, kbm_baux_t);
 
 #define getval_bidx(kbm, offset)                          \
@@ -110,9 +110,9 @@ define_list(kbmbauxv, kbm_baux_t);
 //#define kbm_kmer_smear(K) ((K) ^ ((K) >> 4) ^ ((K) >> 7) ^ ((K) >> 12))
 #define kbm_kmer_smear(K) ((K) ^ ((K) >> 4) ^ ((K) >> 7))
 
-typedef struct {
+struct kbm_kmer_t{
     u8i mer : 46, tot : 17, flt : 1;
-} kbm_kmer_t;
+};
 define_list(kbmkmerv, kbm_kmer_t);
 #define KBM_KMERCODE(E) ((E).mer)
 #define KBM_KMEREQUALS(E1, E2) ((E1).mer == (E2).mer)
@@ -120,12 +120,12 @@ define_list(kbmkmerv, kbm_kmer_t);
 define_hashtable(kbmhash, kbm_kmer_t, KBM_KMERCODE, KBM_KMEREQUALS, u8i, ITSELF,
                  KBM_KEYEQUALS, kbm_kmer_t *, ITSELF);
 
-typedef struct kbm_kaux_t{
+struct kbm_kaux_t{
     u8i off : 40, cnt : 24;
-} kbm_kaux_t;
+};
 define_list(kbmkauxv, kbm_kaux_t);
 
-typedef struct kbm_ref_t{
+struct kbm_ref_t{
     kbm_kmer_t *mer;
     kbm_kaux_t *aux;
     u4i kidx;
@@ -134,7 +134,7 @@ typedef struct kbm_ref_t{
     u4i poffs[2];
     u8i bidx, boff, bend;
     //kbm_bmer_t *b, *end;
-} kbm_ref_t;
+};
 define_list(kbmrefv, kbm_ref_t);
 #if 0
 #define heap_cmp_kbm_bmer(refs, a, b)                                       \
@@ -145,42 +145,42 @@ define_list(kbmrefv, kbm_ref_t);
     num_cmpx(refs[a]->bidx, refs[b]->bidx, refs[a].poffs[refs[a].pdir], \
              refs[b].poffs[refs[b].pdir])
 
-typedef struct {
+struct kbm_cmer_t{
     u4i koff;
     u4i kcnt : 8, kmat : 9, boff : 15;    // offset from the start bin_idx
-} kbm_cmer_t;
+} ;
 define_list(kbmcmerv, kbm_cmer_t);
 static const kbm_cmer_t KBM_CMER_NULL = {0, 0, 0, 0};
 
-typedef struct {
+struct kbm_cell_t{
     u8i beg : 46, mat : 16, bt : 2;
     b2i var;
     u2i gap;
     b4i score;
-} kbm_cell_t;
+} ;
 static const kbm_cell_t KBM_CELL_NULL = {0, 0, 0, 0, 0, 0};
 define_list(kbmcellv, kbm_cell_t);
 
-typedef struct {
+struct kbm_path_t{
     u8i beg, end;
     u4i mat;
     int score;
-} kbm_path_t;
+};
 define_list(kbmpathv, kbm_path_t);
 #define kbmpath_hashcode(E) E.beg
 #define kbmpath_hashequals(E1, E2) (E1).beg == (E2).beg
 define_hashset(kbmphash, kbm_path_t, kbmpath_hashcode, kbmpath_hashequals);
 
-typedef struct {
+struct kbm_map_t{
     u4i qidx : 31, qdir : 1;
     u4i tidx : 31, tdir : 1;
     u8i cgoff : 40, cglen : 24;
     int qb, qe, tb, te;
     int mat, cnt, aln, gap;    // gap is counted in BINs
-} kbm_map_t;
+} ;
 define_list(kbmmapv, kbm_map_t);
 
-typedef struct {
+struct KBMPar{
     int rd_len_order;    // 0
     //int hk; // 0
     int use_kf;                             // 0
@@ -202,12 +202,12 @@ typedef struct {
     float aln_var;           // 0.25
     float min_sim;           // kmer similarity: 0.05
     int test_mode;           // see codes
-} KBMPar;
+} ;
 
 static const obj_desc_t kbmpar_obj_desc = {
     "kbmpar_obj_desc", sizeof(KBMPar), 0, {}, {}, {}, NULL, NULL};
 
-typedef struct {
+struct KBM{
     u8i flags;    // 64 bits, 0: mem_load all, 1: mem_load rdseqs+reads; 2: Single Hash Mode;3-63: unused
     KBMPar *par;
     BaseBank *rdseqs;
@@ -220,11 +220,11 @@ typedef struct {
     kbmbauxv *sauxs;
     kbmhash *hashs[KBM_N_HASH];
     kbmkauxv *kauxs[KBM_N_HASH];
-} KBM;
+} ;
 
 extern const obj_desc_t kbm_obj_desc;
 
-typedef struct {
+struct kbm_dpe_t{
 #if 0
 	u4i poff, bidx;
 	u4i refidx:26, koff:6;
@@ -232,10 +232,10 @@ typedef struct {
     u4i poff;
     u4i refidx;
     u8i bidx : 40, koff : 24;
-} kbm_dpe_t;
+};
 define_list(kbmdpev, kbm_dpe_t);
 
-typedef struct {
+struct KBMDP{
     kbmdpev *kms;    // kmer offset in query and bidx
     u4i km_len;
     BitVec *cmask;    // bit for kbm_cmer_t
@@ -247,16 +247,16 @@ typedef struct {
     kbmphash *paths;    // storing best unique paths by now
     u8i boff;
     u8i last_bidx;
-} KBMDP;
+};
 
-typedef struct {
+struct kmer_off_t{
     u8i kmer;
     u4i off;
     u4i kidx : 30, dir : 1, closed : 1;
-} kmer_off_t;
+};
 define_list(kmeroffv, kmer_off_t);
 
-typedef struct KBMAux {
+struct KBMAux {
     KBM *kbm;
     KBMPar *par;    // can diff from kbm->par
     char *qtag;
@@ -278,7 +278,7 @@ typedef struct KBMAux {
     BitsVec *cigars;
     BitVec *solids;
     String *str;
-} KBMAux;
+};
 
 
 #include "kbm_opt.h"

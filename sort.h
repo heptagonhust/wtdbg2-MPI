@@ -239,6 +239,8 @@
         }                                                        \
     } while(0)
 
+#define dog_psort_array(rs_ary, rs_size, e_type, ncpu, is_a_greater_than_b) sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) 
+
 #define sort_array_adv(rs_size, is_a_greater_than_b, swap_expr) \
     do {                                                        \
         size_t _qsort_n;                                        \

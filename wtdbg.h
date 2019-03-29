@@ -351,9 +351,9 @@ static inline void free_graph(Graph *g) {
     free_lnkv(g->lnks);
     free_edgerefv(g->lrefs);
     free_tracev(g->traces);
-    for(i = 0; i < g->utgs->size; i++) free_tracev(g->utgs->buffer[i]);
+    for(i = 0; i < g->utgs->size; i++) free_tracev((tracev *)g->utgs->buffer[i]);
     free_vplist(g->utgs);
-    for(i = 0; i < g->ctgs->size; i++) free_tracev(g->ctgs->buffer[i]);
+    for(i = 0; i < g->ctgs->size; i++) free_tracev((tracev *)g->ctgs->buffer[i]);
     free_vplist(g->ctgs);
     free(g);
 }
@@ -1877,7 +1877,7 @@ static inline void build_nodes_graph(Graph *g, u8i maxbp, int ncpu, FileReader *
     // generating nodes
     fprintf(KBM_LOGF, "[%s] sorting regs ... ", date());
     fflush(KBM_LOGF);
-    psort_array(regs->buffer, regs->size, rd_reg_t, ncpu,
+    dog_psort_array(regs->buffer, regs->size, rd_reg_t, ncpu,
                 num_cmpgtxx((a.node << 30) | a.rid, (b.node << 30) | b.rid, a.beg, b.beg,
                             b.end, a.end));
     fprintf(KBM_LOGF, " Done\n");
@@ -1926,12 +1926,12 @@ static inline void build_nodes_graph(Graph *g, u8i maxbp, int ncpu, FileReader *
     for(gcov = 0, rank = 0; gcov < kbcnts->size && rank < nds->size; gcov++) {
         rank += kbcnts->buffer[gcov];
     }
-    //psort_array(nds->buffer, nds->size, rnk_ref_t, ncpu, num_cmpgtx(b.cnt, a.cnt, a.rank, b.rank));
-    psort_array(nds->buffer, nds->size, rnk_ref_t, ncpu,
+    //dog_psort_array(nds->buffer, nds->size, rnk_ref_t, ncpu, num_cmpgtx(b.cnt, a.cnt, a.rank, b.rank));
+    dog_psort_array(nds->buffer, nds->size, rnk_ref_t, ncpu,
                 num_cmpgtx(num_diff(a.cnt, gcov), num_diff(b.cnt, gcov), a.rank, b.rank));
     fprintf(KBM_LOGF, " %llu intervals\n", (u8i)nds->size);
     fflush(KBM_LOGF);
-    //psort_array(nds->buffer, nds->size, rnk_ref_t, ncpu, num_cmpgtx(b.score, a.score, a.rank, b.rank));
+    //dog_psort_array(nds->buffer, nds->size, rnk_ref_t, ncpu, num_cmpgtx(b.score, a.score, a.rank, b.rank));
     if(0) {
         memset(kcnts, 0, sizeof(uint64_t) * 256);
         for(idx = 0; idx < nds->size; idx++) {
@@ -2224,7 +2224,7 @@ static inline void build_edges_graph(Graph *g, int ncpu, FILE *log) {
         free_edgeoffv(offs);
         return;
     }
-    psort_array(offs->buffer, offs->size, edge_off_t, ncpu,
+    dog_psort_array(offs->buffer, offs->size, edge_off_t, ncpu,
                 num_cmpgtx(a.idx, b.idx, a.off, b.off));
     lst = 0;
     for(idx = 1; idx <= offs->size; idx++) {
@@ -2269,7 +2269,7 @@ static inline void build_edges_graph(Graph *g, int ncpu, FILE *log) {
         push_edgerefv(g->erefs, (edge_ref_t){idx, 0, 0});
         push_edgerefv(g->erefs, (edge_ref_t){idx, 1, 0});
     }
-    psort_array(
+    dog_psort_array(
         g->erefs->buffer + 1, g->erefs->size - 1, edge_ref_t, ncpu,
         num_cmpgtx(
             (a.flg

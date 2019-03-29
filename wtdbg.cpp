@@ -779,11 +779,11 @@ int main(int argc, char **argv) {
     }
     if(load_kbm) {
         fprintf(KBM_LOGF, "[%s] loading kbm index from %s\n", date(), load_kbm);
-        if((kbm = mem_find_obj_file(&kbm_obj_desc, load_kbm, NULL, NULL, NULL, NULL,
+        if((kbm = (KBM*)mem_find_obj_file(&kbm_obj_desc, load_kbm, NULL, NULL, NULL, NULL,
                                     0)) == NULL) {
             fprintf(KBM_LOGF, " -- cannot find mmap object %s --\n", load_kbm);
             fprintf(KBM_LOGF, " -- try read from file --\n");
-            kbm = mem_read_obj_file(&kbm_obj_desc, load_kbm, NULL, NULL, NULL, NULL);
+            kbm = (KBM*)mem_read_obj_file(&kbm_obj_desc, load_kbm, NULL, NULL, NULL, NULL);
         }
         fprintf(KBM_LOGF, "[%s] Done. %u sequences, %llu bp, parameter('-S %d')\n",
                 date(), (u4i)kbm->reads->size, (u8i)kbm->rdseqs->size,
@@ -831,11 +831,11 @@ int main(int argc, char **argv) {
         tot_bp = kbm->rdseqs->size;
     } else if(load_seqs) {
         fprintf(KBM_LOGF, "[%s] loading kbm index from %s\n", date(), load_seqs);
-        if((kbm = mem_find_obj_file(&kbm_obj_desc, load_seqs, NULL, NULL, NULL, NULL,
+        if((kbm = (KBM*)mem_find_obj_file(&kbm_obj_desc, load_seqs, NULL, NULL, NULL, NULL,
                                     0)) == NULL) {
             fprintf(KBM_LOGF, " -- cannot find mmap object %s --\n", load_seqs);
             fprintf(KBM_LOGF, " -- try read from file --\n");
-            kbm = mem_read_obj_file(&kbm_obj_desc, load_seqs, NULL, NULL, NULL, NULL);
+            kbm = (KBM*)mem_read_obj_file(&kbm_obj_desc, load_seqs, NULL, NULL, NULL, NULL);
         }
         fprintf(KBM_LOGF, "[%s] Done. %u sequences, %llu bp\n", date(),
                 (u4i)kbm->reads->size, (u8i)kbm->rdseqs->size);
