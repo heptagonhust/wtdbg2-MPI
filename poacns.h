@@ -1384,15 +1384,17 @@ static inline int align_rd_pog(POG *g, u2i rid) {
                 inc_b2v(g->btds, seqinc);
             }
             g->btxs->buffer[v->erev + v->vst] = nidx;    // save backtrace nidx
-            // sse_band_row_rdaln_pog(g, nidx, e->node, seqlen, v->vst, u->coff, coff,
-                                //    u->roff, roff, qp, g->par->W, -1);
+            sse_band_row_rdaln_pog(g, nidx, e->node, seqlen, v->vst, u->coff, coff,
+                                    u->roff, roff, qp, g->par->W, -1);
     //check if roff==roff
-    // row2 = ref_b2v(g->rows, roff2);
-    // memcpy(row2,seqlen,);
-            band_row_rdaln_pog(g, nidx, e->node, seqlen, v->vst, u->coff, coff,
-                                   u->roff, roff, qp, g->par->W, -1);
-    // memcmp(row2,seqlen,);
-    
+    //  row2 = ref_b2v(g->rows, roff2);
+    //  memcpy(row2,seqlen,);
+    //         band_row_rdaln_pog(g, nidx, e->node, seqlen, v->vst, u->coff, coff,
+    //                                u->roff, roff, qp, g->par->W, -1);
+    // for(int i=0,i<,i++){
+    //     printf("the sse got:%d\n",);
+    //     printf("the avx got:%d\n",);
+    // }    
 
 
             if(v->vst) {
