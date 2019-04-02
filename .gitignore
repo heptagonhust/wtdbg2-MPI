@@ -4,6 +4,15 @@
 *.dSYM
 data/*
 doc/*
+<<<<<<< HEAD
 build/*
 log/*
 
+=======
+
+.vscode
+.cquery
+.ccls
+._*
+sorted_symbols.txt
+>>>>>>> removed garbage, indented the part I need to read.

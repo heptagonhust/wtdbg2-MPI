@@ -700,75 +700,75 @@ int task;
 thread_end_def(mdbg);
 
 thread_beg_func(mdbg);
-Graph *g;
-KBM *kbm;
-KBMAux *aux, *raux;
-rdregv *regs;
-BitVec *rdflags;
-u4v *maps[3], *tidxs;
-volatile reg_t *reg;
-g = mdbg->g;
-kbm = g->kbm;
-reg = (reg_t *)&mdbg->reg;
-aux = mdbg->aux;
-raux = mdbg->raux;
-regs = mdbg->regs;
-rdflags = mdbg->rdflags;
-maps[0] = init_u4v(32);
-maps[1] = init_u4v(32);
-maps[2] = init_u4v(32);
-tidxs = init_u4v(16);
-thread_beg_loop(mdbg);
-if(mdbg->task == 1) {
-    if(reg->closed) continue;
-    if(g->corr_mode) {
-        if(map_kbmpoa(mdbg->cc, aux, kbm->reads->buffer[reg->rid].tag, reg->rid,
-                      kbm->rdseqs,
-                      kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
-                      UInt(reg->end - reg->beg) * KBM_BIN_SIZE, g->corr_min, g->corr_max,
-                      g->corr_cov, NULL) == 0) {
-            clear_kbmmapv(aux->hits);
-        }
-    } else {
-        query_index_kbm(
-            aux, NULL, reg->rid, kbm->rdseqs,
-            kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
-            UInt(reg->end - reg->beg) * KBM_BIN_SIZE);
-        map_kbm(aux);
-    }
-    if(raux && aux->hits->size) {    // refine
-        kbm_read_t *rd;
-        u4i i, j, tidx;
-        clear_kbm(raux->kbm);
-        bitpush_kbm(raux->kbm, NULL, 0, kbm->rdseqs->bits,
+    Graph *g;
+    KBM *kbm;
+    KBMAux *aux, *raux;
+    rdregv *regs;
+    BitVec *rdflags;
+    u64list *maps[3], *tidxs;
+    volatile reg_t *reg;
+    g = mdbg->g;
+    kbm = g->kbm;
+    reg = (reg_t *)&mdbg->reg;
+    aux = mdbg->aux;
+    raux = mdbg->raux;
+    regs = mdbg->regs;
+    rdflags = mdbg->rdflags;
+    maps[0] = init_u64list(32);
+    maps[1] = init_u64list(32);
+    maps[2] = init_u64list(32);
+    tidxs = init_u64list(16);
+    thread_beg_loop(mdbg);
+        if(mdbg->task == 1) {
+            if(reg->closed) continue;
+            if(g->corr_mode) {
+                if(map_kbmpoa(mdbg->cc, aux, kbm->reads->buffer[reg->rid].tag, reg->rid,
+                            kbm->rdseqs,
+                            kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
+                            UInt(reg->end - reg->beg) * KBM_BIN_SIZE, g->corr_min, g->corr_max,
+                            g->corr_cov, NULL) == 0) {
+                    clear_kbmmapv(aux->hits);
+                }
+            } else {
+                query_index_kbm(
+                    aux, NULL, reg->rid, kbm->rdseqs,
                     kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
                     UInt(reg->end - reg->beg) * KBM_BIN_SIZE);
-        ready_kbm(raux->kbm);
-        simple_index_kbm(raux->kbm, 0, raux->kbm->bins->size);
-        clear_u4v(tidxs);
-        for(i = 0; i < aux->hits->size; i++) {
-            if(i && tidxs->buffer[tidxs->size - 1] == aux->hits->buffer[i].tidx) continue;
-            push_u4v(tidxs, aux->hits->buffer[i].tidx);
-        }
-        clear_kbmmapv(aux->hits);
-        clear_bitsvec(aux->cigars);
-        for(i = 0; i < tidxs->size; i++) {
-            tidx = get_u4v(tidxs, i);
-            rd = ref_kbmreadv(aux->kbm->reads, tidx);
-            query_index_kbm(raux, rd->tag, tidx, aux->kbm->rdseqs, rd->rdoff, rd->rdlen);
-            map_kbm(raux);
-            for(j = 0; j < raux->hits->size; j++) {
-                flip_hit_kbmaux(aux, raux, j);
+                map_kbm(aux);
             }
+            if(raux && aux->hits->size) {    // refine
+                kbm_read_t *rd;
+                u4i i, j, tidx;
+                clear_kbm(raux->kbm);
+                bitpush_kbm(raux->kbm, NULL, 0, kbm->rdseqs->bits,
+                            kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
+                            UInt(reg->end - reg->beg) * KBM_BIN_SIZE);
+                ready_kbm(raux->kbm);
+                simple_index_kbm(raux->kbm, 0, raux->kbm->bins->size);
+                clear_u4v(tidxs);
+                for(i = 0; i < aux->hits->size; i++) {
+                    if(i && tidxs->buffer[tidxs->size - 1] == aux->hits->buffer[i].tidx) continue;
+                    push_u4v(tidxs, aux->hits->buffer[i].tidx);
+                }
+                clear_kbmmapv(aux->hits);
+                clear_bitsvec(aux->cigars);
+                for(i = 0; i < tidxs->size; i++) {
+                    tidx = get_u4v(tidxs, i);
+                    rd = ref_kbmreadv(aux->kbm->reads, tidx);
+                    query_index_kbm(raux, rd->tag, tidx, aux->kbm->rdseqs, rd->rdoff, rd->rdlen);
+                    map_kbm(raux);
+                    for(j = 0; j < raux->hits->size; j++) {
+                        flip_hit_kbmaux(aux, raux, j);
+                    }
+                }
+            }
+            sort_array(aux->hits->buffer, aux->hits->size, kbm_map_t, num_cmpgt(b.mat, a.mat));
         }
-    }
-    sort_array(aux->hits->buffer, aux->hits->size, kbm_map_t, num_cmpgt(b.mat, a.mat));
-}
-thread_end_loop(mdbg);
-free_u4v(maps[0]);
-free_u4v(maps[1]);
-free_u4v(maps[2]);
-free_u4v(tidxs);
+    thread_end_loop(mdbg);
+    free_u64list(maps[0]);
+    free_u64list(maps[1]);
+    free_u64list(maps[2]);
+    free_u64list(tidxs);
 thread_end_func(mdbg);
 
 typedef struct {
