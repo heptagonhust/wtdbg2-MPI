@@ -941,12 +941,12 @@ static inline void band_row_rdaln_pog(POG *g, u4i nidx1, u4i nidx2, u4i seqlen,
         }
     }
     if(nidx2 == POG_TAIL_NODE) {
-        while(end < seqlex) {//检测边界！
+        while(end < seqlex) {
             *(int16_t*) (row1 + end)=min;
             end++;
         }
     }
-    int16_t max=POG_SCORE_MIN;
+    int16_t MAX=POG_SCORE_MIN;
     if(beg) {
         lstf = lsth = POG_SCORE_MIN;
     } else {
@@ -963,21 +963,19 @@ static inline void band_row_rdaln_pog(POG *g, u4i nidx1, u4i nidx2, u4i seqlen,
             }
         }
     }
-    
+
 #define max(a,b) ((a>b)?a:b)
-int16_t lastS,E,H,BT1,BT2,S,F,MAX,BT;
-    for(i = beg; i < beg+(end-beg)*8; i++) {//核心检查这里，编译器是否能自己向量化！
+int16_t E,H,BT1,BT2,S,F,BT;
+    for(i = beg*8; i < end*8; i++) {//核心检查这里，编译器是否能自己向量化！
          E=*(row1 + i );
          H=*(row1 + i - 1 );
          H=H + *(int16_t*) (qp + i );
          E=E+D;
          S=max(H,E);
          BT1=(H>E) ? 0b10 : 0;
-         F=max(S,lastS+I);
-         F=max(lstf+I,F);//比上一个F，至少大I
+         F=max(lstf+I,S);//上一个F+I,或者取S
          MAX = max(MAX, F);
          lstf = F;
-         lastS=S;//留到下一次用
 
          BT2 = (F>S) ? 0b01 : 0;
          BT = (BT1^BT2);
@@ -1386,8 +1384,17 @@ static inline int align_rd_pog(POG *g, u2i rid) {
                 inc_b2v(g->btds, seqinc);
             }
             g->btxs->buffer[v->erev + v->vst] = nidx;    // save backtrace nidx
-            sse_band_row_rdaln_pog(g, nidx, e->node, seqlen, v->vst, u->coff, coff,
+            // sse_band_row_rdaln_pog(g, nidx, e->node, seqlen, v->vst, u->coff, coff,
+                                //    u->roff, roff, qp, g->par->W, -1);
+    //check if roff==roff
+    // row2 = ref_b2v(g->rows, roff2);
+    // memcpy(row2,seqlen,);
+            band_row_rdaln_pog(g, nidx, e->node, seqlen, v->vst, u->coff, coff,
                                    u->roff, roff, qp, g->par->W, -1);
+    // memcmp(row2,seqlen,);
+    
+
+
             if(v->vst) {
                 merge_row_rdaln_pog(g, seqlen, coff, v->coff, roff, v->roff);
                 push_u4v(g->rowr, roff);
