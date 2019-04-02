@@ -7,5 +7,5 @@ mkdir build
 mkdir log
 cd build
 
-CC=icc CXX=icpc cmake ..
+CC=icc CXX=icpc cmake ../src
 make |& tee ../log/build.log
