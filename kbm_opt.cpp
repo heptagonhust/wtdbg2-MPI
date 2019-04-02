@@ -2,7 +2,7 @@
 #include "debrain.h"
 #include <thread>
 #include <iostream>
-#include <glog/logging.h>
+#include "glog/logging.h"
 #include <algorithm>
 #include <atomic>
 
