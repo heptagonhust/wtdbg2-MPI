@@ -806,16 +806,16 @@ static inline void sse_band_row_rdaln_pog(POG *g, u4i nidx1, u4i nidx2, u4i seql
         H = _mm_slli_si128(E, 2);
         H = _mm_insert_epi16(H, lsth, 0);
         H = _mm_adds_epi16(H, _mm_load_si128(((__m128i *)qp) + i));
-        lsth = _mm_extract_epi16(E, 7);
+        lsth = _mm_extract_epi16(E, 7);//lsth是上一个H被挤出来的，加到了下一个的H的最低  
         E = _mm_adds_epi16(E, D);
         S = _mm_max_epi16(H, E);
         BT1 = _mm_cmpgt_epi16(S, H);
         BT1 = _mm_and_si128(BT1, BT1_MASK);
         F = _mm_slli_si128(S, 2);
-        F = _mm_insert_epi16(F, lstf, 0);
+        F = _mm_insert_epi16(F, lstf, 0);//lstf是上一个F最大的，加到了下一个的F的最低
         F = _mm_adds_epi16(F, I);
         F = _mm_max_epi16(S, F);
-        while(1) {
+        while(1) {//经过运算，每个F，都是相比于所有右边的short比，并且加上了（I×距离），的最大值
             H = _mm_slli_si128(F, 2);
             H = _mm_insert_epi16(H, lstf, 0);
             H = _mm_adds_epi16(H, I);
@@ -865,7 +865,154 @@ static inline void sse_band_row_rdaln_pog(POG *g, u4i nidx1, u4i nidx2, u4i seql
     row2[seqlex + 1] = beg * 8;
     row2[seqlex + 2] = end * 8;
 }
+//typedef uint32_t u4i;
+//typedef int16_t b2i;
+static inline void band_row_rdaln_pog(POG *g, u4i nidx1, u4i nidx2, u4i seqlen,
+                                          u2i vst, u4i coff1, u4i coff2, u4i roff1,
+                                          u4i roff2, b2i *qp, int W, int center) {
 
+    b2i *row1, *row2, *btds;
+    u4i i, slen, seqlex, beg, end;
+    int  mi;
+    UNUSED(coff1);
+    slen = (seqlen + 7) / 8;
+    seqlex = slen * 8;
+    int16_t lsth,lstf;
+    int16_t I = g->par->I;
+    int16_t D = g->par->D;
+    int16_t min=POG_SCORE_MIN;
+    int16_t BTX_MASK = vst << 2;
+    row1 = ref_b2v(g->rows, roff1);
+    row2 = ref_b2v(g->rows, roff2);
+    btds = ref_b2v(g->btds, coff2);
+    if(W) {
+        if(center < 0) {
+            if(row1[row1[seqlex]] >= g->par->W_score) {
+                if(g->par->near_dialog) {
+                    if(row1[seqlex + 1] > 0 || row1[seqlex + 2] < Int(seqlex)) {
+                        if(row1[seqlex] == (row1[seqlex + 1] + row1[seqlex + 2]) / 2) {
+                            center = (row1[seqlex + 1] + row1[seqlex + 2]) / 2 + 1;
+                        } else if(row1[seqlex] >
+                                  (row1[seqlex + 1] + row1[seqlex + 2]) / 2) {
+                            center = (row1[seqlex + 1] + row1[seqlex + 2]) / 2 + 2;
+                        } else {
+                            center = (row1[seqlex + 1] + row1[seqlex + 2]) / 2;
+                        }
+                    } else {    // first set center
+                        center = row1[seqlex];
+                    }
+                } else {
+                    center = row1[seqlex];
+                }
+                beg = num_max(center - W, row1[seqlex + 1]);
+                end = num_min(center + 1 + W, row1[seqlex + 2] + 1);
+                if(end > seqlex) end = seqlex;
+            } else {
+                beg = row1[seqlex + 1];
+                end = num_min(row1[seqlex + 2] + 1, Int(seqlex));
+            }
+        } else {
+            beg = num_max(center - W, row1[seqlex + 1]);
+            end = num_min(center + 1 + W, row1[seqlex + 2] + 1);
+            if(end > seqlex) end = seqlex;
+        }
+    } else {
+        beg = 0;
+        end = seqlex;
+    }
+    if(beg & 0x7U) beg = beg & (~0x7U);
+    if(end & 0x7U) end = (end + 8) & (~0x7U);
+    beg = beg / 8;
+    end = (end + 7) / 8;
+    if(row1[seqlex + 1] >= row1[seqlex + 2]) {    // happening in realign mode
+        for(i = beg * 8; i < end * 8; i += 1) {
+            * (int16_t*) (row1 + i)=min;
+        }
+    } else {
+        if(Int(beg * 8) < row1[seqlex + 1]) {
+            for(i = beg * 8; Int(i) < row1[seqlex + 1]; i += 1) {
+            *(int16_t*) (row1 + i)=min;
+            }
+        }
+        if(Int(end * 8) > row1[seqlex + 2]) {
+            for(i = row1[seqlex + 2]; i < end * 8; i += 1) {
+            *(int16_t*) (row1 + i)=min;
+            }
+        }
+    }
+    if(nidx2 == POG_TAIL_NODE) {
+        while(end < seqlex) {//检测边界！
+            *(int16_t*) (row1 + end)=min;
+            end++;
+        }
+    }
+    int16_t max=POG_SCORE_MIN;
+    if(beg) {
+        lstf = lsth = POG_SCORE_MIN;
+    } else {
+        if(row1[seqlex + 1] >= row1[seqlex + 2]) {
+            lstf = POG_SCORE_MIN;
+            lsth = 0;    // auto global alignment
+        } else {
+            lstf = (g->par->alnmode == POG_ALNMODE_OVERLAP) ? 0 : POG_SCORE_MIN;
+            if(nidx1) {
+                lsth = (g->par->alnmode == POG_ALNMODE_OVERLAP) ? 0 : POG_SCORE_MIN;
+                ;
+            } else {
+                lsth = g->par->T;
+            }
+        }
+    }
+    
+#define max(a,b) ((a>b)?a:b)
+int16_t lastS,E,H,BT1,BT2,S,F,MAX,BT;
+    for(i = beg; i < beg+(end-beg)*8; i++) {//核心检查这里，编译器是否能自己向量化！
+         E=*(row1 + i );
+         H=*(row1 + i - 1 );
+         H=H + *(int16_t*) (qp + i );
+         E=E+D;
+         S=max(H,E);
+         BT1=(H>E) ? 0b10 : 0;
+         F=max(S,lastS+I);
+         F=max(lstf+I,F);//比上一个F，至少大I
+         MAX = max(MAX, F);
+         lstf = F;
+         lastS=S;//留到下一次用
+
+         BT2 = (F>S) ? 0b01 : 0;
+         BT = (BT1^BT2);
+         BT = (BT ^BTX_MASK);
+         *(row2 + i )= F;
+         *(btds + i )= BT;
+        }
+
+    if(1) {
+        b2i ary[8]={MAX,MAX,MAX,MAX,MAX,MAX,MAX,MAX};
+        u4i j, k;
+        k = 0;
+        for(j = 1; j < 8; j++) {
+            if(ary[j] > ary[k]) {
+                k = j;
+            }
+        }
+        mi = beg * 8 + k;
+        for(i = beg + 1; i < end; i++) {
+            if(row2[i * 8 + k] > row2[mi]) {
+                mi = i * 8 + k;
+            }
+        }
+    } else {
+        mi = beg * 8;
+        for(i = mi + 1; i < end * 8; i++) {
+            if(row2[i] > row2[mi]) {
+                mi = i;
+            }
+        }
+    }
+    row2[seqlex] = mi;
+    row2[seqlex + 1] = beg * 8;
+    row2[seqlex + 2] = end * 8;
+}
 static inline void merge_row_rdaln_pog(POG *g, u4i seqlen, u4i coff1, u4i coff2,
                                        u4i roff1, u4i roff2) {
     b2i *row1, *row2, *btd1, *btd2;
