@@ -16,8 +16,5 @@ target_link_libraries(wtdbg ksw)
 target_link_libraries(wtdbg-cns ksw)
 target_link_libraries(wtpoa-cns ksw)
 
-
-
-
 add_executable(pgzf pgzf.cpp)
 target_link_libraries(pgzf pthread m rt z)
