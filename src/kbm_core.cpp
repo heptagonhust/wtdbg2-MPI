@@ -1,4 +1,3 @@
-
 #include "kbm_defines.h"
 KBMPar *init_kbmpar() {
     KBMPar *par;
