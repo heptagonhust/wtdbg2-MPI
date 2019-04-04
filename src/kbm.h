@@ -20,7 +20,6 @@
 #pragma once
 #include "list.h"
 #include "hashset.h"
-#include <vector>
 #include "dna.h"
 #include "filereader.h"
 #include "bitvec.h"
@@ -28,6 +27,7 @@
 #include "bit2vec.h"
 #include "thread.h"
 #include "txtplot.h"
+#include "mmap.h"
 
 //#define __DEBUG__	1
 #define TEST_MODE
@@ -223,7 +223,7 @@ struct KBM {
     //u8i      *kfs;
     // kbmbmerv *seeds;
     // kbmbauxv *sauxs;
-    std::vector<kbm_bidxaux_t> vec_bidxaux;
+    mm_vector<kbm_bidxaux_t> vec_bidxaux;
     kbmhash *hashs[KBM_N_HASH];
     kbmkauxv *kauxs[KBM_N_HASH];
 };
