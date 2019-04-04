@@ -7,9 +7,3 @@ doc/*
 build/*
 log/*
 
-
-.vscode
-.cquery
-.ccls
-._*
-sorted_symbols.txt
