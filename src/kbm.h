@@ -107,7 +107,7 @@ define_list(kbmbinv, kbm_bin_t);
 
 // TODO: dog change
 struct kbm_bidxaux_t {
-    u8i bidx : 24, dir : 1, koff : 7;
+    u8i bidx : 40, dir : 1, koff : 7;
 };
 
 
