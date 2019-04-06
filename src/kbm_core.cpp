@@ -1366,7 +1366,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
         aux->bmlen = aux->nheap;
         aux->bmcnt = (aux->kbm->bins->size + aux->bmlen - 1) / aux->bmlen;
     }
-    fprintf(stderr, " -- %s tot=%d bmlen=%d bmcnt=%d mr=%d in %s -- %s:%d --\n", aux->qtag, tot, aux->bmlen, aux->bmcnt, tot / aux->bmlen, __FUNCTION__, __FILE__, __LINE__); fflush(stderr);
+    fprintf(stderr, " -- %s tot=%d bmlen=%d bmcnt=%d mr=%d in %s -- %s:%d --\n", aux->qtag, tot, aux->bmlen, aux->bmcnt, tot / aux->bmlen, __FUNCTION__, __FILE__, __LINE__); 
     for(i = 0; i < aux->nheap && i < aux->bmlen; i++) {
         clear_u4v(aux->heaps[i]);
     }
