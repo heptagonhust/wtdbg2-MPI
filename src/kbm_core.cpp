@@ -1304,7 +1304,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
                    num_cmpgt(a.off, b.off));
         tot = 0;
         next = 0;
-        for(i = 0; i < aux->refs->size; i++) {
+        for(i = 0; i < aux->refs->size; i++) {// I don't know what is  fine,solids and next
             auto ref = ref_kbmrefv(aux->refs, i);
             if(ref->closed) {
                 continue;
@@ -1346,9 +1346,10 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
     sort_array(aux->refs->buffer, aux->refs->size, kbm_ref_t, num_cmpgt(a.off, b.off));
     // estimate binmap
     aux->bmoff = 0;
+    // ？？？？
     if(aux->refs->size) {
-        mr = aux->par->min_mat / (aux->par->ksize + aux->par->psize);
-        if(mr < 512) mr = 512;
+        mr = aux->par->min_mat / (aux->par->ksize + aux->par->psize);//200 / 
+        if(mr < 512) mr = 512; //mr = 512
         aux->bmlen = tot / mr;
         if(aux->bmlen == 0) aux->bmlen = 1;
         aux->bmcnt = (aux->kbm->bins->size + aux->bmlen - 1) / aux->bmlen;
@@ -1356,6 +1357,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
             aux->bmcnt = aux->qnbin * 50;
             aux->bmlen = (aux->kbm->bins->size + aux->bmcnt - 1) / aux->bmcnt;
         }
+        fprintf("")
     } else {
         aux->bmlen = 1;
         aux->bmcnt = aux->kbm->bins->size;
@@ -1364,7 +1366,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
         aux->bmlen = aux->nheap;
         aux->bmcnt = (aux->kbm->bins->size + aux->bmlen - 1) / aux->bmlen;
     }
-    //fprintf(stderr, " -- %s tot=%d bmlen=%d bmcnt=%d mr=%d in %s -- %s:%d --\n", aux->qtag, tot, aux->bmlen, aux->bmcnt, tot / aux->bmlen, __FUNCTION__, __FILE__, __LINE__); fflush(stderr);
+    fprintf(stderr, " -- %s tot=%d bmlen=%d bmcnt=%d mr=%d in %s -- %s:%d --\n", aux->qtag, tot, aux->bmlen, aux->bmcnt, tot / aux->bmlen, __FUNCTION__, __FILE__, __LINE__); fflush(stderr);
     for(i = 0; i < aux->nheap && i < aux->bmlen; i++) {
         clear_u4v(aux->heaps[i]);
     }
