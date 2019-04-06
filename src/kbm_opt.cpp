@@ -81,6 +81,7 @@ void map_kbm(KBMAux *aux) {
                 ++boff;
                 int hidx = kbm_ref->bidx / aux->bmcnt;
                 if(hidx - aux->bmoff < aux->nheap) {
+                    fprintf(stderr, " -- %s hidx=%d aux->bmoff=%d hidx - aux->bmoff=%d in %s -- %s:%d --\n", aux->qtag,hidx,aux->bmoff,hidx - aux->bmoff, __FUNCTION__, __FILE__, __LINE__);
                     push_u4v(aux->heaps[hidx - aux->bmoff], idx);
                 }
             }
