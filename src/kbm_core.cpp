@@ -1357,7 +1357,7 @@ void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs, u8i se
             aux->bmcnt = aux->qnbin * 50;
             aux->bmlen = (aux->kbm->bins->size + aux->bmcnt - 1) / aux->bmcnt;
         }
-        fprintf("")
+        //fprintf("")
     } else {
         aux->bmlen = 1;
         aux->bmcnt = aux->kbm->bins->size;
