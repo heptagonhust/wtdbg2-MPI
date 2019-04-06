@@ -4,7 +4,15 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-const size_t page_size = 2UL * 1024 * 1024;
+#ifndef MAP_HUGETLB
+# define MAP_HUGETLB 0x40000
+#endif
+
+#ifndef MAP_HUGE_1GB
+# define MAP_HUGE_1GB (30 << 26)
+#endif
+
+const size_t page_size = 1UL * 1024 * 1024 * 1024;
 
 template<typename T>
 class mmap_allocator {
@@ -20,9 +28,10 @@ public:
         }
         allocated = length;
         mm_data = mmap(NULL, length, (PROT_READ | PROT_WRITE),
-                       MAP_PRIVATE | MAP_ANONYMOUS | 0x40000, -1, 0);
-        if(mm_data == NULL){
+                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0);
+        if(mm_data == MAP_FAILED){
             perror("mmap");
+            exit(1);
         }
         return reinterpret_cast<T *>(mm_data);
     }
