@@ -44,10 +44,16 @@ void map_kbm(KBMAux *aux) {
                     int hidx = kbm_ref->bidx / aux->bmcnt;
                     int heap_id = hidx - aux->bmoff;
                     if(heap_id < aux->nheap) {
+                        if(aux->bmoff>0){
+                            fprintf(stderr, " -- %s hidx=%d aux->bmoff=%d hidx - aux->bmoff=%d in %s -- %s:%d --\n", aux->qtag,hidx,aux->bmoff,hidx - aux->bmoff, __FUNCTION__, __FILE__, __LINE__);
+                        }
                         push_u4v(aux->heaps[heap_id], i);
                     }
                 }
             }
+        }
+        if(aux->bmoff>0){
+            fprintf(stderr, " -- %s aux->bmoff = %d in %s -- %s:%d --\n", aux->qtag,aux->bmoff, __FUNCTION__, __FILE__, __LINE__);
         }
         u4v *heap = aux->heaps[hptr - aux->bmoff];
 
@@ -81,7 +87,7 @@ void map_kbm(KBMAux *aux) {
                 ++boff;
                 int hidx = kbm_ref->bidx / aux->bmcnt;
                 if(hidx - aux->bmoff < aux->nheap) {
-                    fprintf(stderr, " -- %s hidx=%d aux->bmoff=%d hidx - aux->bmoff=%d in %s -- %s:%d --\n", aux->qtag,hidx,aux->bmoff,hidx - aux->bmoff, __FUNCTION__, __FILE__, __LINE__);
+                    // fprintf(stderr, " -- %s hidx=%d aux->bmoff=%d hidx - aux->bmoff=%d in %s -- %s:%d --\n", aux->qtag,hidx,aux->bmoff,hidx - aux->bmoff, __FUNCTION__, __FILE__, __LINE__);
                     push_u4v(aux->heaps[hidx - aux->bmoff], idx);
                 }
             }
