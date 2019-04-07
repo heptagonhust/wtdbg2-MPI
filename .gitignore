@@ -7,7 +7,6 @@ doc/*
 build/*
 log/*
 
-
 .vscode
 .cquery
 .ccls
