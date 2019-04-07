@@ -22,6 +22,7 @@
 #include "kbm_defines.h"
 #include <getopt.h>
 #include <regex.h>
+#include "zhwklibs/memtrace.h"
 
 #ifndef VERSION
 #define VERSION 0.0
@@ -412,6 +413,7 @@ static inline int64_t mm_parse_num(const char *str) {
 }
 
 int main(int argc, char **argv) {
+    init_mtrace("./memtrace.log");
     Graph *g;
     KBMPar *par, *rpar;
     KBM *kbm;
@@ -1299,6 +1301,7 @@ int main(int argc, char **argv) {
     free_kbmpar(rpar);
     free_graph(g);
     fprintf(KBM_LOGF, "[%s] Program Done\n", date());
+    term_mtrace();
     END_STAT_PROC_INFO(stderr);
     return 0;
 }

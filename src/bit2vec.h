@@ -76,6 +76,7 @@ static inline int encap_bit2vec(Bit2Vec *vec, uint32_t n) {
             vec->cap += 1024 * 1024;
         }
     }
+    fLog(mtrace_file, "object bit2vec %p resized %lld\n", vec, (vec->cap * 2 + 7) / 8);
     vec->bits = (uint8_t*)realloc(vec->bits, (vec->cap * 2 + 7) / 8);
     memset(vec->bits + (cap * 2 + 7) / 8, 0, (vec->cap * 2 + 7) / 8 - (cap * 2 + 7) / 8);
     return 1;

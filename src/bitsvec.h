@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include "zhwklibs/memtrace.h"
 
 /* Useful functions when n_bit > 8 */
 
@@ -126,6 +127,7 @@ static inline int encap_bitsvec(BitsVec *vec, u8i n) {
         vec->cap = (vec->size + n + 0x3FFFFFFFLLU) & (MAX_U8 << 30);
     }
     vec->bits = (uint8_t*)realloc(vec->bits, (vec->cap * vec->n_bit + 15) / 8);
+    fLog(mtrace_file, "object bitsvec %p resized %lld\n", vec, (vec->cap * vec->n_bit + 15) / 8);
     return 1;
 }
 

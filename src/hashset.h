@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
+#include "zhwklibs/memtrace.h"
 
 static const uint64_t sys_prime_list[61] = {0x7LLU,
                                             0xfLLU,
@@ -462,6 +463,7 @@ static inline uint64_t _rj_hashset_find_prime(uint64_t n) {
         do {                                                                        \
             n = _rj_hashset_find_prime(n * 2);                                      \
         } while(n * set->load_factor < set->count + num);                           \
+        fLog(mtrace_file, "object hashset %p resized %lld\n", set, n * set->e_size);\
         set->array = (hash_ele_type*)realloc(set->array, n * set->e_size);                          \
         if(set->array == NULL) {                                                    \
             fprintf(stderr, "-- Out of memory --\n");                               \

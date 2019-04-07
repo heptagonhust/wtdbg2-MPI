@@ -12,3 +12,4 @@ log/*
 .ccls
 ._*
 sorted_symbols.txt
+.ccls-cache
