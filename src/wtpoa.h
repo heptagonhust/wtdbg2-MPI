@@ -23,6 +23,7 @@
 #include "tripoa.h"
 #include "kswx.h"
 #include "filereader.h"
+#include "zhwklibs/memtrace.h"
 
 typedef struct {
     char *reftag;
