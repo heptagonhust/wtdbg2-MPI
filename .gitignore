@@ -6,6 +6,8 @@ data/*
 doc/*
 build/*
 log/*
+.idea/*
+cmake-build-debug/
 
 .vscode
 .cquery

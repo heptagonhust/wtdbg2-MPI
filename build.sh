@@ -1,5 +1,7 @@
 #!/bin/bash
-module load compilers/gcc/7.4.1-low
+
+source /usr/share/modules/init/bash
+module load compilers/gcc/7.4.1
 module load compilers/icc/intel-cc
 module load librarys/glog
 
