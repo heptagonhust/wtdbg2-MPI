@@ -1,3 +1,4 @@
+#!/bin/bash
 module load compilers/icc/intel-cc
 module load compilers/gcc/7.4.1-low
 module load librarys/glog

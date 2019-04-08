@@ -18,8 +18,8 @@ typedef struct _flog_outfile FLogFile;
 #define fLog(ffile, fmt, ...) do{ \
     mu_lock(ffile.mu);\
     fprintf(ffile.fp, fmt, __VA_ARGS__);\
-    fflush(ffile.fp);
-    sync();
+    fflush(ffile.fp);\
+    sync();\
     mu_unlock(ffile.mu);\
 }while(0);
 
