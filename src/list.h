@@ -244,7 +244,7 @@
     }                                                                                    \
                                                                                          \
     static inline void encap_##list_type(list_type *list, size_type n) {                 \
-        list->cap = encap_list(list, (void **)&list->buffer, sizeof(e_type), list->size,       \
+        list->cap = encap_list(list, #e_type, (void **)&list->buffer, sizeof(e_type), list->size,       \
                                list->cap, n, list->mem_zero, list->n_head);              \
     }                                                                                    \
                                                                                          \
@@ -252,7 +252,7 @@
         if((size_t)n == (size_t)list->cap) return;                                       \
         list->cap = n;                                                                   \
         if(list->size > n) list->size = n;                                               \
-        fLog(mtrace_file, "object list %p resized %lld\n", list, (list->cap + list->n_head) * sizeof(e_type));\
+        fLog(mtrace_file, "object list %s %p resized %lld\n", #e_type, list, (list->cap + list->n_head) * sizeof(e_type));\
         list->buffer = (e_type *)realloc(list->buffer - list->n_head,                    \
                                          (list->cap + list->n_head) * sizeof(e_type)) +  \
                        list->n_head;                                                     \
@@ -281,7 +281,7 @@
                     list->cap += inc_size;                                               \
                 }                                                                        \
             }                                                                            \
-            fLog(mtrace_file, "object list %p resized %lld\n", list, list->cap * sizeof(e_type));\
+            fLog(mtrace_file, "object list %s %p resized %lld\n", #e_type, list, list->cap * sizeof(e_type));\
             list->buffer = (e_type *)realloc(list->buffer, list->cap * sizeof(e_type));  \
         }                                                                                \
         memset(list->buffer + list->size, 0, n * sizeof(e_type));                        \
@@ -782,7 +782,7 @@ static const obj_desc_t cplist_deep_obj_desc = {
         list = (list_type *)malloc(sizeof(list_type));                                 \
         list->size = 0;                                                                \
         list->cap = size;                                                              \
-        fLog(mtrace_file, "object list %p resized %lld\n", list, size * sizeof(e_type));            \
+        fLog(mtrace_file, "object rclist %s %p resized %lld\n", #e_type, list, size * sizeof(e_type));            \
         list->buffer = (e_type *)calloc(size, sizeof(e_type));                         \
         list->recyc = (size_type *)calloc(2, sizeof(size_type));                       \
         list->rsize = 0;                                                               \
@@ -807,7 +807,7 @@ static const obj_desc_t cplist_deep_obj_desc = {
     static inline void encap_##list_type(list_type *list, size_type inc) {             \
         if(list->rsize >= inc) return;                                                 \
         inc -= list->rsize;                                                            \
-        list->cap = encap_list(list, (void **)&list->buffer, sizeof(e_type), list->size,     \
+        list->cap = encap_list(list, #e_type, (void **)&list->buffer, sizeof(e_type), list->size,     \
                                list->cap, inc, 0, 0);                                  \
     }                                                                                  \
                                                                                        \
@@ -816,7 +816,7 @@ static const obj_desc_t cplist_deep_obj_desc = {
         if(list->rsize) {                                                              \
             return list->recyc[--list->rsize];                                         \
         }                                                                              \
-        list->cap = encap_list(list, (void **)&list->buffer, sizeof(e_type), list->size,     \
+        list->cap = encap_list(list, #e_type, (void **)&list->buffer, sizeof(e_type), list->size,     \
                                list->cap, 1, 0, 0);                                    \
         a = list->buffer + list->size;                                                 \
         UNUSED(e_init);                                                                \
@@ -833,7 +833,7 @@ static const obj_desc_t cplist_deep_obj_desc = {
     }                                                                                  \
                                                                                        \
     static inline void recyc_##list_type(list_type *list, size_type idx) {             \
-        list->rcap = encap_list(list, (void **)&list->recyc, sizeof(size_type), list->rsize, \
+        list->rcap = encap_list(list, #e_type, (void **)&list->recyc, sizeof(size_type), list->rsize, \
                                 list->rcap, 1, 0, 0);                                  \
         list->recyc[list->rsize++] = idx;                                              \
     }                                                                                  \
@@ -851,7 +851,7 @@ static const obj_desc_t cplist_deep_obj_desc = {
     static inline void recyc_all_##list_type(list_type *list) {                        \
         size_type i;                                                                   \
         list->rsize = 0;                                                               \
-        list->rcap = encap_list(list, (void **)&list->recyc, sizeof(size_type), list->rsize, \
+        list->rcap = encap_list(list, #e_type, (void **)&list->recyc, sizeof(size_type), list->rsize, \
                                 list->rcap, list->size, 0, 0);                         \
         for(i = 0; i < list->size; i++) {                                              \
             list->recyc[i] = i;                                                        \

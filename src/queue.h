@@ -96,9 +96,9 @@
         if(list->trash_size) {                                                         \
             idx = list->trash[--list->trash_size];                                     \
         } else {                                                                       \
-            encap_list(list, (void **)&(list->buffer), sizeof(e_type), list->off, list->cap, \
+            encap_list(list, #e_type, (void **)&(list->buffer), sizeof(e_type), list->off, list->cap, \
                        1, 0, 0);                                                       \
-            list->cap = encap_list(list, (void **)&(list->links), sizeof(size_type),         \
+            list->cap = encap_list(list, #e_type, (void **)&(list->links), sizeof(size_type),         \
                                    list->off, list->cap, 1, 0, 0);                     \
             idx = list->off++;                                                         \
         }                                                                              \
@@ -116,7 +116,7 @@
     static inline int pop_##list_type(list_type *list, e_type *e) {                    \
         if(list->size == 0) return 0;                                                  \
         *e = list->buffer[list->head];                                                 \
-        list->trash_cap = encap_list(list, (void **)&list->trash, sizeof(size_type),         \
+        list->trash_cap = encap_list(list, #e_type, (void **)&list->trash, sizeof(size_type),         \
                                      list->trash_size, list->trash_cap, 1, 0, 0);      \
         list->trash[list->trash_size++] = list->head;                                  \
         list->head = list->links[list->head];                                          \

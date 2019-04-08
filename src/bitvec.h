@@ -289,7 +289,7 @@ static inline void encap_bitvec(BitVec *bitv, u8i num) {
             bitv->n_cap += 1024 * 1024 * 8;
     }
     bitv->bits = (u8i *)realloc(bitv->bits, bitv->n_cap / 8 + 8);
-    fLog(mtrace_file, "object bitvec %p resized %lld\n", bitv, bitv->n_cap / 8 + 8);
+    fLog(mtrace_file, "object bitvec rawbits %p resized %lld\n", bitv, bitv->n_cap / 8 + 8);
     memset(((void *)bitv->bits) + cap / 8, 0, (bitv->n_cap - cap) / 8 + 8);
     bitv->bits[cap / 64] = 0x0000000000000001LLU;
 }
@@ -298,7 +298,7 @@ static inline void recap_bitvec(BitVec *bitv, u8i new_cap) {
     if(new_cap & 0x3FU) new_cap = (new_cap & 0xFFFFFFFFFFFFFFC0LLU) + 0x40U;
     if(bitv->n_cap == new_cap) return;
     bitv->bits = (u8i *)realloc(bitv->bits, new_cap / 8 + 8);
-    fLog(mtrace_file, "object bitvec %p resized %lld\n", bitv, new_cap / 8 + 8);
+    fLog(mtrace_file, "object bitvec rawbits %p resized %lld\n", bitv, new_cap / 8 + 8);
     if(new_cap > bitv->n_cap) {
         memset(((void *)bitv->bits) + bitv->n_cap / 8, 0,
                (new_cap - bitv->n_cap) / 8 + 8);

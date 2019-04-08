@@ -213,7 +213,7 @@ static inline void free16(void *ptr) {
     free(p);
 }
 
-static inline size_t encap_list(void* list_trace, void **buffer, size_t e_size, size_t size, size_t cur_cap,
+static inline size_t encap_list(void* list_trace, const char* type_trace, void **buffer, size_t e_size, size_t size, size_t cur_cap,
                                 size_t inc, int mem_zeros, size_t n_head) {
     void *ptr;
     size_t cap;
@@ -235,7 +235,7 @@ static inline size_t encap_list(void* list_trace, void **buffer, size_t e_size, 
     } else {
         cap = (size + inc + 0x3FFFFFFFLLU) & (MAX_U8 << 30);
     }
-    fLog(mtrace_file, "object list %p resized %lld\n", list_trace, e_size * (cap + n_head));
+    fLog(mtrace_file, "object list %s %p resized %lld\n", type_trace, list_trace, e_size * (cap + n_head));
     ptr =(void*)realloc((*buffer) - n_head * e_size, e_size * (cap + n_head));
     if(ptr == NULL) {
         fprintf(stderr,
