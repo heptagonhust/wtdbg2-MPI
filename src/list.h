@@ -782,7 +782,7 @@ static const obj_desc_t cplist_deep_obj_desc = {
         list = (list_type *)malloc(sizeof(list_type));                                 \
         list->size = 0;                                                                \
         list->cap = size;                                                              \
-        printf("object list %p resized %lld\n", list, size * sizeof(e_type));            \
+        fLog("object list %p resized %lld\n", list, size * sizeof(e_type));            \
         list->buffer = (e_type *)calloc(size, sizeof(e_type));                         \
         list->recyc = (size_type *)calloc(2, sizeof(size_type));                       \
         list->rsize = 0;                                                               \
