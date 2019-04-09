@@ -14,8 +14,6 @@ void bitpush_kbm(KBM *kbm, char *tag, int taglen, u8i *seqs, u8i seqoff,
 u8i filter_reads_kbm(KBM *kbm, u8i retain_size, int strategy);
 void ready_kbm(KBM *kbm);
 KBM *clone_seqs_kbm(KBM *src, KBMPar *par);
-void split_FIXP_kmers_kbm(BaseBank *rdseqs, u8i offset, u4i length, u1i ksize,
-                          u1i psize, u4i kmod, kmeroffv *rs[2]);
 u8i seed2solid_idx_kbm(KBM *kbm, kbm_dpe_t *p);
 u8i rdoff2solid_idx_kbm(KBM *kbm, u4i ridx, u4i roff);
 void index_kbm(KBM *kbm, u8i beg, u8i end, u4i ncpu, FILE *kmstat);
@@ -26,8 +24,6 @@ void clear_kbmdp(KBMDP *dp, KBMAux *aux, u8i bidx);
 void free_kbmdp(KBMDP *dp);
 KBMAux *init_kbmaux(KBM *kbm);
 void free_kbmaux(KBMAux *aux);
-void query_index_kbm(KBMAux *aux, char *qtag, u4i qidx, BaseBank *rdseqs,
-                     u8i seqoff, u4i seqlen);
 void print_exists_index_kbm(KBM *kbm, char *qtag, BaseBank *rdseqs, u8i seqoff,
                             u4i seqlen, kmeroffv *kmers[2], FILE *out);
 int _update_dp_path_kbm(KBMDP *dp, u8i end, kbm_cell_t *c);

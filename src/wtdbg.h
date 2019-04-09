@@ -24,6 +24,7 @@
 #include "kbmpoa.h"
 #include "filewriter.h"
 #include "pgzf.h"
+#include "kbm_opt.h"
 #include <getopt.h>
 #include <regex.h>
 
@@ -730,11 +731,10 @@ if(mdbg->task == 1) {
             clear_kbmmapv(aux->hits);
         }
     } else {
-        query_index_kbm(
+        deal_with_aux_kbm(
             aux, NULL, reg->rid, kbm->rdseqs,
             kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
             UInt(reg->end - reg->beg) * KBM_BIN_SIZE);
-        map_kbm(aux);
     }
     if(raux && aux->hits->size) {    // refine
         kbm_read_t *rd;
@@ -755,8 +755,7 @@ if(mdbg->task == 1) {
         for(i = 0; i < tidxs->size; i++) {
             tidx = get_u4v(tidxs, i);
             rd = ref_kbmreadv(aux->kbm->reads, tidx);
-            query_index_kbm(raux, rd->tag, tidx, aux->kbm->rdseqs, rd->rdoff, rd->rdlen);
-            map_kbm(raux);
+            deal_with_aux_kbm(raux, rd->tag, tidx, aux->kbm->rdseqs, rd->rdoff, rd->rdlen);
             for(j = 0; j < raux->hits->size; j++) {
                 flip_hit_kbmaux(aux, raux, j);
             }
