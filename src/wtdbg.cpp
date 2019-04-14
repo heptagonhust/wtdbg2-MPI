@@ -933,10 +933,305 @@ int main(int argc, char **argv) {
 
     if (world_rank != 0) {
         kbm = (KBM *) malloc(sizeof(KBM));
+        kbm->vec_bidxaux.reserve(64);
+    } else {
+        if (load_kbm) {
+            fprintf(KBM_LOGF, "[%s] loading kbm index from %s\n", date(), load_kbm);
+            if ((kbm = (KBM *) mem_find_obj_file(&kbm_obj_desc, load_kbm, NULL, NULL, NULL, NULL,
+                                                 0)) == NULL) {
+                fprintf(KBM_LOGF, " -- cannot find mmap object %s --\n", load_kbm);
+                fprintf(KBM_LOGF, " -- try read from file --\n");
+                kbm = (KBM *) mem_read_obj_file(&kbm_obj_desc, load_kbm, NULL, NULL, NULL, NULL);
+            }
+            fprintf(KBM_LOGF, "[%s] Done. %u sequences, %llu bp, parameter('-S %d')\n",
+                    date(), (u4i) kbm->reads->size, (u8i) kbm->rdseqs->size,
+                    kbm->par->kmer_mod / KBM_N_HASH);
+            {
+                // check KBMPar
+                if ((opt_flags >> 0) & 0x01) {
+                    if (kbm->par->psize != par->psize) {
+                        fprintf(KBM_LOGF, " ** -p is different, %d != %d\n", kbm->par->psize,
+                                par->psize);
+                        exit(1);
+                    }
+                } else {
+                    par->psize = kbm->par->psize;
+                }
+                if ((opt_flags >> 1) & 0x01) {
+                    if (kbm->par->ksize != par->ksize) {
+                        fprintf(KBM_LOGF, " ** -k is different, %d != %d\n", kbm->par->ksize,
+                                par->ksize);
+                        exit(1);
+                    }
+                } else {
+                    par->ksize = kbm->par->ksize;
+                }
+                if ((opt_flags >> 2) & 0x01) {
+                    if (kbm->par->kmer_mod != par->kmer_mod) {
+                        fprintf(KBM_LOGF, " ** -S is different, %d != %d\n",
+                                kbm->par->kmer_mod / KBM_N_HASH, par->kmer_mod / KBM_N_HASH);
+                        exit(1);
+                    }
+                } else {
+                    par->kmer_mod = kbm->par->kmer_mod;
+                }
+                if ((opt_flags >> 3) & 0x01) {
+                    if (kbm->par->rd_len_order != par->rd_len_order) {
+                        fprintf(KBM_LOGF, " ** par->rd_len_order is different, %d != %d\n",
+                                kbm->par->rd_len_order, par->rd_len_order);
+                        exit(1);
+                    }
+                } else {
+                    par->rd_len_order = kbm->par->rd_len_order;
+                }
+            }
+            nfix = 0;
+            tot_bp = kbm->rdseqs->size;
+        } else if (load_seqs) {
+            fprintf(KBM_LOGF, "[%s] loading kbm index from %s\n", date(), load_seqs);
+            if ((kbm = (KBM *) mem_find_obj_file(&kbm_obj_desc, load_seqs, NULL, NULL, NULL, NULL,
+                                                 0)) == NULL) {
+                fprintf(KBM_LOGF, " -- cannot find mmap object %s --\n", load_seqs);
+                fprintf(KBM_LOGF, " -- try read from file --\n");
+                kbm = (KBM *) mem_read_obj_file(&kbm_obj_desc, load_seqs, NULL, NULL, NULL, NULL);
+            }
+            fprintf(KBM_LOGF, "[%s] Done. %u sequences, %llu bp\n", date(),
+                    (u4i) kbm->reads->size, (u8i) kbm->rdseqs->size);
+            kbm = clone_seqs_kbm(kbm, par);
+            nfix = 0;
+            tot_bp = kbm->rdseqs->size;
+        } else {
+            kbm = init_kbm(par);
+            fprintf(KBM_LOGF, "[%s] loading reads\n", date());
+            tot_bp = 0;
+            nfix = 0;
+            seqs[0] = init_biosequence();
+            seqs[1] = init_biosequence();
+            regex_t reg;
+            regmatch_t mats[3];
+            int z;
+            z = regcomp(&reg, "^(.+?)/[0-9]+_[0-9]+$", REG_EXTENDED);
+            if (z) {
+                regerror(z, &reg, regtag, 13);
+                fprintf(stderr, " -- REGCOMP: %s --\n", regtag);
+                fflush(stderr);
+                return 1;
+            }
+            for (j = 0; j < 2; j++) {
+                if (j == 0) {
+                    if (ngs->size == 0) {
+                        continue;
+                    } else {
+                        fr = open_all_filereader(ngs->size, ngs->buffer, asyn_read);
+                    }
+                } else {
+                    if (pbs->size == 0) {
+                        continue;
+                    } else {
+                        fr = open_all_filereader(pbs->size, pbs->buffer, asyn_read);
+                    }
+                }
+                k = 0;
+                reset_biosequence(seqs[0]);
+                reset_biosequence(seqs[1]);
+                while (1) {
+                    int has = readseq_filereader(fr, seqs[k]);
+                    if (tidy_reads) {
+                        if (has) {
+                            if ((z = regexec(&reg, seqs[k]->tag->string, 3, mats, 0)) == 0) {
+                                trunc_string(seqs[k]->tag, mats[1].rm_eo);
+                            } else if (z != REG_NOMATCH) {
+                                regerror(z, &reg, regtag, 13);
+                                fprintf(stderr, " -- REGEXEC: %s --\n", regtag);
+                                fflush(stderr);
+                            }
+                            //fprintf(stderr, "1: %s len=%d\n", seqs[k]->tag->string, seqs[k]->seq->size); fflush(stderr);
+                            //fprintf(stderr, "2: %s len=%d\n", seqs[!k]->tag->string, seqs[!k]->seq->size); fflush(stderr);
+                            if (seqs[k]->tag->size == seqs[!k]->tag->size &&
+                                strcmp(seqs[k]->tag->string, seqs[!k]->tag->string) == 0) {
+                                if (seqs[k]->seq->size > seqs[!k]->seq->size) {
+                                    k = !k;
+                                }
+                                continue;
+                            } else {
+                                seq = seqs[!k];
+                                k = !k;
+                            }
+                        } else {
+                            seq = seqs[!k];
+                        }
+                        if (seq->seq->size < tidy_reads) {
+                            if (has)
+                                continue;
+                            else
+                                break;
+                        }
+                        if (tidy_rdtag) {
+                            sprintf(regtag, "S%010llu", (u8i) kbm->reads->size);
+                            clear_string(seq->tag);
+                            append_string(seq->tag, regtag, 11);
+                        }
+                    } else {
+                        if (has == 0) break;
+                        seq = seqs[k];
+                    }
+                    tag_size = seq->tag->size;
+                    for (i = 0; (int) i < seq->seq->size; i += WT_MAX_RDLEN) {
+                        len = num_min(seq->seq->size - i, WT_MAX_RDLEN);
+                        if (i) {
+                            append_string(seq->tag, "_V", 2);
+                            add_int_string(seq->tag, i / WT_MAX_RDLEN);
+                        }
+                        if (!KBM_LOG && (kbm->reads->size % 10000) == 0) {
+                            fprintf(KBM_LOGF, "\r%u", (u4i) kbm->reads->size);
+                            fflush(KBM_LOGF);
+                        }
+                        //fprintf(stderr, " -- %s len=%d in %s -- %s:%d --\n", seq->tag->string, seq->seq->size, __FUNCTION__, __FILE__, __LINE__); fflush(stderr);
+                        if (kbm->reads->size >= WT_MAX_RD) {
+                            fprintf(stderr, " -- Read Number Out of Range: %u --\n",
+                                    (u4i) kbm->reads->size);
+                            fflush(stderr);
+                            break;
+                        }
+                        push_kbm(kbm, seq->tag->string, seq->tag->size, seq->seq->string + i,
+                                 len);
+                        if (i) {
+                            seq->tag->size = tag_size;
+                            seq->tag->string[tag_size] = '\0';
+                        }
+                        if (j == 0) nfix++;
+                    }
+                    tot_bp += seq->seq->size;
+                    if (max_bp && tot_bp >= max_bp) {
+                        break;
+                    }
+                    if (has == 0) break;
+                    if (kbm->reads->size >= WT_MAX_RD) {
+                        fprintf(stderr, " -- Read Number Out of Range: %u --\n",
+                                (u4i) kbm->reads->size);
+                        fflush(stderr);
+                        break;
+                    }
+                }
+                close_filereader(fr);
+            }
+            regfree(&reg);
+            free_biosequence(seqs[0]);
+            free_biosequence(seqs[1]);
+            if (!KBM_LOG) {
+                fprintf(KBM_LOGF, "\r%u reads", (unsigned) kbm->reads->size);
+                fflush(KBM_LOGF);
+            }
+            {
+                if (par->rd_len_order && genome_size > 0 && genome_depx > 0) {
+                    cnt = genome_size * genome_depx;
+                    if (cnt < tot_bp) {
+                        fprintf(KBM_LOGF,
+                                "\n[%s] filtering from %u reads (>=%u bp), %llu bp. Try "
+                                "selecting %llu bp",
+                                date(), (unsigned) kbm->reads->size, tidy_reads, tot_bp, cnt);
+                        fflush(KBM_LOGF);
+                        tot_bp = filter_reads_kbm(kbm, cnt, filter_rd_strategy);
+                    }
+                }
+                ready_kbm(kbm);
+                fprintf(KBM_LOGF, "\n[%s] Done, %u reads (>=%u bp), %llu bp, %u bins\n",
+                        date(), (unsigned) kbm->reads->size, tidy_reads, tot_bp,
+                        (u4i) kbm->bins->size);
+                fflush(KBM_LOGF);
+            }
+        }
+        print_proc_stat_info(0);
+        if (edge_cov <= 0) {
+            if (genome_size > 0) {
+                float dep;
+                dep = tot_bp / genome_size;
+                if (dep <= 40) {
+                    edge_cov = 2;
+                } else if (dep >= 80) {
+                    edge_cov = 4;
+                } else {
+                    edge_cov = 3;
+                }
+            } else {
+                edge_cov = 3;
+            }
+            fprintf(KBM_LOGF, "[%s] Set --edge-cov to %d\n", date(), edge_cov);
+            fflush(KBM_LOGF);
+        }
+        if (genome_size <= 0 && corr_mode > 0) {
+            fprintf(KBM_LOGF, "[%s] MUST set -g <?> with --corr-mode %f\n", date(),
+                    corr_mode);
+            fflush(KBM_LOGF);
+            return 1;
+        }
+        if (node_cov == 0) node_cov = edge_cov;
+        fprintf(KBM_LOGF,
+                "KEY PARAMETERS: -k %d -p %d -K %f %s-S %f -s %f -g %llu -X %f -e %d -L %d\n",
+                par->ksize, par->psize, par->kmax + par->ktop,
+                par->skip_contained ? "" : "-A ", ((double) par->kmer_mod) / KBM_N_HASH,
+                par->min_sim, (u8i) genome_size, genome_depx, edge_cov, tidy_reads);
+        g = init_graph(kbm);
+        {
+            g->rpar = realign ? rpar : NULL;
+            g->genome_size = genome_size;
+            g->num_index = num_index;
+            g->corr_mode = (corr_mode > 0 && genome_size > 0) ? 1 : 0;
+            g->corr_gcov = corr_mode;
+            g->corr_min = corr_min;
+            g->corr_max = corr_max;
+            g->corr_cov = corr_cov;
+            g->corr_bsize = corr_bsize;
+            g->corr_bstep = corr_bstep;
+            g->node_order = node_order;
+            g->mem_stingy = mem_stingy;
+            g->reglen = reglen / KBM_BIN_SIZE;
+            g->regovl = regovl / KBM_BIN_SIZE;
+            g->max_overhang = max_overhang / KBM_BIN_SIZE;
+            g->node_max_conflict = node_drop;
+            g->node_merge_cutoff = node_mrg;
+            g->min_node_cov = node_cov;
+            g->max_node_cov_sg = node_cov;
+            g->max_node_cov = max_node_cov;
+            g->exp_node_cov = exp_node_cov;
+            g->min_node_mats = min_bins;
+            g->min_edge_cov = edge_cov;
+            g->max_sg_end = max_trace_end;
+            g->store_low_cov_edge = store_low_cov_edge;
+            g->bub_step = bub_step;
+            g->tip_step = tip_step;
+            g->rep_step = rep_step;
+            g->min_ctg_len = min_ctg_len;
+            g->min_ctg_nds = min_ctg_nds;
+            g->n_fix = nfix;
+            g->only_fix = only_fix;
+            g->rep_filter = rep_filter;
+            g->rep_detach = rep_detach;
+            g->cut_tip = cut_tip;
+            g->chainning_hits = chainning;
+            g->uniq_hit = uniq_hit;
+            g->bestn = bestn;
+            g->minimal_output = less_out;
+        }
+        g->par = par;
+        if (log_rep && !less_out) {
+            evtlog = open_file_for_write(prefix, ".events", 1);
+        } else
+            evtlog = NULL;
     }
 
-    size_t size = kbm->reads->size;
-    MPI_Bcast(&kbm->flags, sizeof(u8i), MPI_BYTE, 0, MPI_COMM_WORLD);
+    MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    size_t size;
+    if (world_rank == 0) {
+        size = kbm->reads->size;
+    }
+    int error = MPI_Bcast(&kbm->flags, sizeof(u8i), MPI_BYTE, 0, MPI_COMM_WORLD);
+    if (error != MPI_SUCCESS) {
+        char error_string[BUFSIZ];
+        int length_of_error_string;
+        MPI_Error_string(error, error_string, &length_of_error_string);
+        fprintf(stderr, "%3d: %s\n", world_rank, error_string);
+    }
     MPI_Bcast(kbm->par, sizeof(kbm->par), MPI_BYTE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&size, 1, MPI_INT32_T, 0, MPI_COMM_WORLD);
     if (world_rank != 0) {
@@ -1027,290 +1322,6 @@ int main(int argc, char **argv) {
         proc_alignments_core_slave(kbm, ncpu);
         return 0;
     }
-    if (load_kbm) {
-        fprintf(KBM_LOGF, "[%s] loading kbm index from %s\n", date(), load_kbm);
-        if ((kbm = (KBM *) mem_find_obj_file(&kbm_obj_desc, load_kbm, NULL, NULL, NULL, NULL,
-                                             0)) == NULL) {
-            fprintf(KBM_LOGF, " -- cannot find mmap object %s --\n", load_kbm);
-            fprintf(KBM_LOGF, " -- try read from file --\n");
-            kbm = (KBM *) mem_read_obj_file(&kbm_obj_desc, load_kbm, NULL, NULL, NULL, NULL);
-        }
-        fprintf(KBM_LOGF, "[%s] Done. %u sequences, %llu bp, parameter('-S %d')\n",
-                date(), (u4i) kbm->reads->size, (u8i) kbm->rdseqs->size,
-                kbm->par->kmer_mod / KBM_N_HASH);
-        {
-            // check KBMPar
-            if ((opt_flags >> 0) & 0x01) {
-                if (kbm->par->psize != par->psize) {
-                    fprintf(KBM_LOGF, " ** -p is different, %d != %d\n", kbm->par->psize,
-                            par->psize);
-                    exit(1);
-                }
-            } else {
-                par->psize = kbm->par->psize;
-            }
-            if ((opt_flags >> 1) & 0x01) {
-                if (kbm->par->ksize != par->ksize) {
-                    fprintf(KBM_LOGF, " ** -k is different, %d != %d\n", kbm->par->ksize,
-                            par->ksize);
-                    exit(1);
-                }
-            } else {
-                par->ksize = kbm->par->ksize;
-            }
-            if ((opt_flags >> 2) & 0x01) {
-                if (kbm->par->kmer_mod != par->kmer_mod) {
-                    fprintf(KBM_LOGF, " ** -S is different, %d != %d\n",
-                            kbm->par->kmer_mod / KBM_N_HASH, par->kmer_mod / KBM_N_HASH);
-                    exit(1);
-                }
-            } else {
-                par->kmer_mod = kbm->par->kmer_mod;
-            }
-            if ((opt_flags >> 3) & 0x01) {
-                if (kbm->par->rd_len_order != par->rd_len_order) {
-                    fprintf(KBM_LOGF, " ** par->rd_len_order is different, %d != %d\n",
-                            kbm->par->rd_len_order, par->rd_len_order);
-                    exit(1);
-                }
-            } else {
-                par->rd_len_order = kbm->par->rd_len_order;
-            }
-        }
-        nfix = 0;
-        tot_bp = kbm->rdseqs->size;
-    } else if (load_seqs) {
-        fprintf(KBM_LOGF, "[%s] loading kbm index from %s\n", date(), load_seqs);
-        if ((kbm = (KBM *) mem_find_obj_file(&kbm_obj_desc, load_seqs, NULL, NULL, NULL, NULL,
-                                             0)) == NULL) {
-            fprintf(KBM_LOGF, " -- cannot find mmap object %s --\n", load_seqs);
-            fprintf(KBM_LOGF, " -- try read from file --\n");
-            kbm = (KBM *) mem_read_obj_file(&kbm_obj_desc, load_seqs, NULL, NULL, NULL, NULL);
-        }
-        fprintf(KBM_LOGF, "[%s] Done. %u sequences, %llu bp\n", date(),
-                (u4i) kbm->reads->size, (u8i) kbm->rdseqs->size);
-        kbm = clone_seqs_kbm(kbm, par);
-        nfix = 0;
-        tot_bp = kbm->rdseqs->size;
-    } else {
-        kbm = init_kbm(par);
-        fprintf(KBM_LOGF, "[%s] loading reads\n", date());
-        tot_bp = 0;
-        nfix = 0;
-        seqs[0] = init_biosequence();
-        seqs[1] = init_biosequence();
-        regex_t reg;
-        regmatch_t mats[3];
-        int z;
-        z = regcomp(&reg, "^(.+?)/[0-9]+_[0-9]+$", REG_EXTENDED);
-        if (z) {
-            regerror(z, &reg, regtag, 13);
-            fprintf(stderr, " -- REGCOMP: %s --\n", regtag);
-            fflush(stderr);
-            return 1;
-        }
-        for (j = 0; j < 2; j++) {
-            if (j == 0) {
-                if (ngs->size == 0) {
-                    continue;
-                } else {
-                    fr = open_all_filereader(ngs->size, ngs->buffer, asyn_read);
-                }
-            } else {
-                if (pbs->size == 0) {
-                    continue;
-                } else {
-                    fr = open_all_filereader(pbs->size, pbs->buffer, asyn_read);
-                }
-            }
-            k = 0;
-            reset_biosequence(seqs[0]);
-            reset_biosequence(seqs[1]);
-            while (1) {
-                int has = readseq_filereader(fr, seqs[k]);
-                if (tidy_reads) {
-                    if (has) {
-                        if ((z = regexec(&reg, seqs[k]->tag->string, 3, mats, 0)) == 0) {
-                            trunc_string(seqs[k]->tag, mats[1].rm_eo);
-                        } else if (z != REG_NOMATCH) {
-                            regerror(z, &reg, regtag, 13);
-                            fprintf(stderr, " -- REGEXEC: %s --\n", regtag);
-                            fflush(stderr);
-                        }
-                        //fprintf(stderr, "1: %s len=%d\n", seqs[k]->tag->string, seqs[k]->seq->size); fflush(stderr);
-                        //fprintf(stderr, "2: %s len=%d\n", seqs[!k]->tag->string, seqs[!k]->seq->size); fflush(stderr);
-                        if (seqs[k]->tag->size == seqs[!k]->tag->size &&
-                            strcmp(seqs[k]->tag->string, seqs[!k]->tag->string) == 0) {
-                            if (seqs[k]->seq->size > seqs[!k]->seq->size) {
-                                k = !k;
-                            }
-                            continue;
-                        } else {
-                            seq = seqs[!k];
-                            k = !k;
-                        }
-                    } else {
-                        seq = seqs[!k];
-                    }
-                    if (seq->seq->size < tidy_reads) {
-                        if (has)
-                            continue;
-                        else
-                            break;
-                    }
-                    if (tidy_rdtag) {
-                        sprintf(regtag, "S%010llu", (u8i) kbm->reads->size);
-                        clear_string(seq->tag);
-                        append_string(seq->tag, regtag, 11);
-                    }
-                } else {
-                    if (has == 0) break;
-                    seq = seqs[k];
-                }
-                tag_size = seq->tag->size;
-                for (i = 0; (int) i < seq->seq->size; i += WT_MAX_RDLEN) {
-                    len = num_min(seq->seq->size - i, WT_MAX_RDLEN);
-                    if (i) {
-                        append_string(seq->tag, "_V", 2);
-                        add_int_string(seq->tag, i / WT_MAX_RDLEN);
-                    }
-                    if (!KBM_LOG && (kbm->reads->size % 10000) == 0) {
-                        fprintf(KBM_LOGF, "\r%u", (u4i) kbm->reads->size);
-                        fflush(KBM_LOGF);
-                    }
-                    //fprintf(stderr, " -- %s len=%d in %s -- %s:%d --\n", seq->tag->string, seq->seq->size, __FUNCTION__, __FILE__, __LINE__); fflush(stderr);
-                    if (kbm->reads->size >= WT_MAX_RD) {
-                        fprintf(stderr, " -- Read Number Out of Range: %u --\n",
-                                (u4i) kbm->reads->size);
-                        fflush(stderr);
-                        break;
-                    }
-                    push_kbm(kbm, seq->tag->string, seq->tag->size, seq->seq->string + i,
-                             len);
-                    if (i) {
-                        seq->tag->size = tag_size;
-                        seq->tag->string[tag_size] = '\0';
-                    }
-                    if (j == 0) nfix++;
-                }
-                tot_bp += seq->seq->size;
-                if (max_bp && tot_bp >= max_bp) {
-                    break;
-                }
-                if (has == 0) break;
-                if (kbm->reads->size >= WT_MAX_RD) {
-                    fprintf(stderr, " -- Read Number Out of Range: %u --\n",
-                            (u4i) kbm->reads->size);
-                    fflush(stderr);
-                    break;
-                }
-            }
-            close_filereader(fr);
-        }
-        regfree(&reg);
-        free_biosequence(seqs[0]);
-        free_biosequence(seqs[1]);
-        if (!KBM_LOG) {
-            fprintf(KBM_LOGF, "\r%u reads", (unsigned) kbm->reads->size);
-            fflush(KBM_LOGF);
-        }
-        {
-            if (par->rd_len_order && genome_size > 0 && genome_depx > 0) {
-                cnt = genome_size * genome_depx;
-                if (cnt < tot_bp) {
-                    fprintf(KBM_LOGF,
-                            "\n[%s] filtering from %u reads (>=%u bp), %llu bp. Try "
-                            "selecting %llu bp",
-                            date(), (unsigned) kbm->reads->size, tidy_reads, tot_bp, cnt);
-                    fflush(KBM_LOGF);
-                    tot_bp = filter_reads_kbm(kbm, cnt, filter_rd_strategy);
-                }
-            }
-            ready_kbm(kbm);
-            fprintf(KBM_LOGF, "\n[%s] Done, %u reads (>=%u bp), %llu bp, %u bins\n",
-                    date(), (unsigned) kbm->reads->size, tidy_reads, tot_bp,
-                    (u4i) kbm->bins->size);
-            fflush(KBM_LOGF);
-        }
-    }
-    print_proc_stat_info(0);
-    if (edge_cov <= 0) {
-        if (genome_size > 0) {
-            float dep;
-            dep = tot_bp / genome_size;
-            if (dep <= 40) {
-                edge_cov = 2;
-            } else if (dep >= 80) {
-                edge_cov = 4;
-            } else {
-                edge_cov = 3;
-            }
-        } else {
-            edge_cov = 3;
-        }
-        fprintf(KBM_LOGF, "[%s] Set --edge-cov to %d\n", date(), edge_cov);
-        fflush(KBM_LOGF);
-    }
-    if (genome_size <= 0 && corr_mode > 0) {
-        fprintf(KBM_LOGF, "[%s] MUST set -g <?> with --corr-mode %f\n", date(),
-                corr_mode);
-        fflush(KBM_LOGF);
-        return 1;
-    }
-    if (node_cov == 0) node_cov = edge_cov;
-    fprintf(KBM_LOGF,
-            "KEY PARAMETERS: -k %d -p %d -K %f %s-S %f -s %f -g %llu -X %f -e %d -L %d\n",
-            par->ksize, par->psize, par->kmax + par->ktop,
-            par->skip_contained ? "" : "-A ", ((double) par->kmer_mod) / KBM_N_HASH,
-            par->min_sim, (u8i) genome_size, genome_depx, edge_cov, tidy_reads);
-    g = init_graph(kbm);
-    {
-        g->rpar = realign ? rpar : NULL;
-        g->genome_size = genome_size;
-        g->num_index = num_index;
-        g->corr_mode = (corr_mode > 0 && genome_size > 0) ? 1 : 0;
-        g->corr_gcov = corr_mode;
-        g->corr_min = corr_min;
-        g->corr_max = corr_max;
-        g->corr_cov = corr_cov;
-        g->corr_bsize = corr_bsize;
-        g->corr_bstep = corr_bstep;
-        g->node_order = node_order;
-        g->mem_stingy = mem_stingy;
-        g->reglen = reglen / KBM_BIN_SIZE;
-        g->regovl = regovl / KBM_BIN_SIZE;
-        g->max_overhang = max_overhang / KBM_BIN_SIZE;
-        g->node_max_conflict = node_drop;
-        g->node_merge_cutoff = node_mrg;
-        g->min_node_cov = node_cov;
-        g->max_node_cov_sg = node_cov;
-        g->max_node_cov = max_node_cov;
-        g->exp_node_cov = exp_node_cov;
-        g->min_node_mats = min_bins;
-        g->min_edge_cov = edge_cov;
-        g->max_sg_end = max_trace_end;
-        g->store_low_cov_edge = store_low_cov_edge;
-        g->bub_step = bub_step;
-        g->tip_step = tip_step;
-        g->rep_step = rep_step;
-        g->min_ctg_len = min_ctg_len;
-        g->min_ctg_nds = min_ctg_nds;
-        g->n_fix = nfix;
-        g->only_fix = only_fix;
-        g->rep_filter = rep_filter;
-        g->rep_detach = rep_detach;
-        g->cut_tip = cut_tip;
-        g->chainning_hits = chainning;
-        g->uniq_hit = uniq_hit;
-        g->bestn = bestn;
-        g->minimal_output = less_out;
-    }
-    g->par = par;
-    if (log_rep && !less_out) {
-        evtlog = open_file_for_write(prefix, ".events", 1);
-    } else
-        evtlog = NULL;
-
     if (load_nodes && load_clips) {
         fprintf(KBM_LOGF, "[%s] loading nodes from %s ... ", date(), load_nodes);
         fflush(KBM_LOGF);
