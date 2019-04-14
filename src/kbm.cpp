@@ -168,9 +168,8 @@ thread_beg_func(maln);
                 break;
             }
         } else {
-            query_index_kbm(maln->aux, maln->rdtag->size ? maln->rdtag->string : NULL, maln->qidx,
+            deal_with_aux_kbm(maln->aux, maln->rdtag->size ? maln->rdtag->string : NULL, maln->qidx,
                             maln->rdseqs, maln->rdoff, maln->rdlen);
-            map_kbm(maln->aux);
             if(maln->refine && maln->aux->hits->size) {
                 kbm_read_t *rd;
                 kbm_map_t *hit;
@@ -196,9 +195,8 @@ thread_beg_func(maln);
                 for(i = 0; i < tidxs->size; i++) {
                     tidx = get_u4v(tidxs, i);
                     rd = ref_kbmreadv(maln->aux->kbm->reads, tidx);
-                    query_index_kbm(raux, rd->tag, tidx, maln->aux->kbm->rdseqs, rd->rdoff,
+                    deal_with_aux_kbm(raux, rd->tag, tidx, maln->aux->kbm->rdseqs, rd->rdoff,
                                     rd->rdlen);
-                    map_kbm(raux);
                     for(j = 0; j < raux->hits->size; j++) {
                         flip_hit_kbmaux(maln->aux, raux, j);
                     }
