@@ -1840,7 +1840,7 @@ static inline void proc_alignments_core_slave(KBM *kbm, int ncpu) {
                     MPI_Send(&last_mission, sizeof(last_mission), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
                     if (mdbg->reg.closed == 0) {
                         MPI_Send(&mdbg->aux->hits->size, 1, MPI_INT32_T, 0, 0, MPI_COMM_WORLD);
-                        MPI_Send(mdbg->aux->hits->buffer, size * sizeof(kbm_read_t), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
+                        MPI_Send(mdbg->aux->hits->buffer, mdbg->aux->hits->size * sizeof(kbm_read_t), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
 
                         MPI_Send(mdbg->aux->cigars, sizeof(BitsVec), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
                         MPI_Send(mdbg->aux->cigars->bits, (mdbg->aux->cigars->cap * mdbg->aux->cigars->n_bit + 15) / 8,
@@ -1853,7 +1853,7 @@ static inline void proc_alignments_core_slave(KBM *kbm, int ncpu) {
             MPI_Send(&last_mission, sizeof(last_mission), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
             if (mdbg->reg.closed == 0) {
                 MPI_Send(&mdbg->aux->hits->size, 1, MPI_INT32_T, 0, 0, MPI_COMM_WORLD);
-                MPI_Send(mdbg->aux->hits->buffer, size * sizeof(kbm_read_t), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
+                MPI_Send(mdbg->aux->hits->buffer, mdbg->aux->hits->size * sizeof(kbm_read_t), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
 
                 MPI_Send(mdbg->aux->cigars, sizeof(BitsVec), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
                 MPI_Send(mdbg->aux->cigars->bits, (mdbg->aux->cigars->cap * mdbg->aux->cigars->n_bit + 15) / 8,

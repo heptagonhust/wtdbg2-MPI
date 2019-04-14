@@ -384,8 +384,7 @@ static inline int map_kbmpoa(CTGCNS *cc, KBMAux *aux, char *rdtag, u4i qidx,
     aux->par->min_aln = num_max(seqlen * corr_cov, min_aln);
     aux->par->min_mat = num_max(aux->par->min_aln * aux->par->min_sim, min_mat);
 
-    query_index_kbm(aux, rdtag, qidx, rdseq, seqoff, seqlen);
-    map_kbm(aux);
+    deal_with_aux_kbm(aux, rdtag, qidx, rdseq, seqoff, seqlen);
 
     aux->par->self_aln = 0;
     aux->par->max_hit = max_hit;
@@ -435,7 +434,6 @@ static inline int map_kbmpoa(CTGCNS *cc, KBMAux *aux, char *rdtag, u4i qidx,
     if(cc->cns->size == 0) {
         return 0;
     }
-    query_index_kbm(aux, rdtag, qidx, cc->cns, 0, cc->cns->size);
-    map_kbm(aux);
+    deal_with_aux_kbm(aux, rdtag, qidx, cc->cns, 0, cc->cns->size);
     return 1;
 }
