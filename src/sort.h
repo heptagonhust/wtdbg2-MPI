@@ -145,7 +145,7 @@
                          });                                         \
     } while(0)
 #define sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \
-        dog_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b)
+        ori_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b)
 
 #define ori_sort_array(rs_ary, rs_size, e_type, is_a_greater_than_b) \
     do {                                                             \
