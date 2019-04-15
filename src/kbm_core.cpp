@@ -37,7 +37,7 @@ void free_kbmpar(KBMPar *par) {
 KBM *init_kbm(KBMPar *par) {
     KBM *kbm;
     u4i i;
-    kbm = (KBM *)malloc(sizeof(KBM));
+    kbm = new KBM;
     kbm->flags = 0;
     kbm->par = par;
     kbm->rdseqs = init_basebank();
@@ -69,7 +69,7 @@ void free_kbm(KBM *kbm) {
     //if(kbm->kfs) free(kbm->kfs);
     for(i = 0; i < KBM_N_HASH; i++) free_kbmhash(kbm->hashs[i]);
     for(i = 0; i < KBM_N_HASH; i++) free_kbmkauxv(kbm->kauxs[i]);
-    free(kbm);
+    delete kbm;
 }
 
 void reset_index_kbm(KBM *kbm) {

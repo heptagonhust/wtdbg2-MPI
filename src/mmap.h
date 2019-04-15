@@ -27,6 +27,7 @@ public:
             length = (length / page_size + 1) * page_size;
         }
         allocated = length;
+        fprintf(stderr, "Allocated: %d\n",allocated);
         mm_data = mmap(NULL, length, (PROT_READ | PROT_WRITE),
                        MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0);
         if(mm_data == MAP_FAILED){
