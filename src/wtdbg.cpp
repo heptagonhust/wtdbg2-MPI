@@ -1220,134 +1220,14 @@ int main(int argc, char **argv) {
             evtlog = NULL;
     }
 
-    size_t size;
-
-    MPI_Bcast(&kbm->flags, sizeof(u8i), MPI_BYTE, 0, MPI_COMM_WORLD);
-    if(world_rank != 0){
-        kbm->par = init_kbmpar();
-    }
-    MPI_Bcast(kbm->par, sizeof(kbm->par), MPI_BYTE, 0, MPI_COMM_WORLD);
-
-    if (world_rank == 0) {
-        size = kbm->reads->size;
-    }
-    MPI_Bcast(&size, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
-    if (world_rank != 0) {
-        kbm->reads = init_kbmreadv(size);
-    }
-    MPI_Bcast(kbm->reads->buffer, size * sizeof(kbm_read_t), MPI_BYTE, 0, MPI_COMM_WORLD);
-    kbm->reads->size = size;
-    //broadcast kbm reads
-
-    if (world_rank == 0) {
-        size = kbm->bins->size;
-    }
-    MPI_Bcast(&size, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
-    if (world_rank != 0) {
-        kbm->bins = init_kbmbinv(size);
-    }
-    MPI_Bcast(kbm->bins->buffer, size, MPI_UINT64_T, 0, MPI_COMM_WORLD);
-    kbm->bins->size = size;
-    //broadcast kbm bins
-
-    if (world_rank == 0) {
-        size = kbm->vec_bidxaux.size();
-//        fprintf(stderr, "vector size: %3d: %d\n", world_rank, size);
-//        fflush(stderr);
-    }
-    MPI_Bcast(&size, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
-//    fprintf(stderr, "vector size: %3d: %d\n", world_rank, size);
-    if (world_rank != 0) {
-        kbm->vec_bidxaux.resize(size);
-    }
-    MPI_Bcast(kbm->vec_bidxaux.data(), size * sizeof(kbm_bidxaux_t), MPI_BYTE, 0, MPI_COMM_WORLD);
-    //broadcast kbm vector
-
-    if (world_rank != 0){
-        kbm->rdseqs = (BaseBank*)malloc(sizeof(BaseBank));
-    }
-    MPI_Bcast(kbm->rdseqs, sizeof(BaseBank), MPI_BYTE, 0, MPI_COMM_WORLD);
-    if(world_rank != 0){
-        kbm->rdseqs->bits = (u8i*)malloc(((kbm->rdseqs->size + 31) / 32 + 1) * 8);
-    }
-    MPI_Bcast(kbm->rdseqs->bits, (kbm->rdseqs->size + 31) / 32 , MPI_UINT64_T, 0, MPI_COMM_WORLD);
-
-    //broadcast kbm rdseqs
-
-    for (i = 0; i < KBM_N_HASH; i++) {
-        if (world_rank == 0) {
-            size = kbm->hashs[i]->size;
-        }
-        MPI_Bcast(&size, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        if (world_rank != 0) {
-            kbm->hashs[i] = init_kbmhash(size);
-        }
-        MPI_Bcast(kbm->hashs[i]->array, size, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        kbm->hashs[i]->size = size;
-        //broadcast kbm hash
-
-        if (world_rank == 0) {
-            size = kbm->hashs[i]->ones->n_bit;
-        }
-        MPI_Bcast(&size, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        MPI_Bcast(kbm->hashs[i]->ones->bits, size, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        kbm->hashs[i]->ones->n_bit = size;
-
-        if (world_rank == 0) {
-            size = kbm->hashs[i]->ones->sum_size;
-        }
-        MPI_Bcast(&size, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        MPI_Bcast(kbm->hashs[i]->ones->sums, size, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        kbm->hashs[i]->ones->sum_size = size;
-
-        if (world_rank == 0) {
-            size = kbm->hashs[i]->ones->hash_size;
-        }
-        MPI_Bcast(&size, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        MPI_Bcast(kbm->hashs[i]->ones->hash, size, MPI_UINT64_T, 0, MPI_COMM_WORLD);
-        kbm->hashs[i]->ones->hash_size = size;
-        //broadcast kbm hash one
-
-
-        if (world_rank == 0) {
-            size = kbm->hashs[i]->dels->n_bit;
-        }
-        MPI_Bcast(&size, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        MPI_Bcast(kbm->hashs[i]->dels->bits, size, MPI_UINT64_T, 0, MPI_COMM_WORLD);
-        kbm->hashs[i]->dels->n_bit = size;
-
-        if (world_rank == 0) {
-            size = kbm->hashs[i]->dels->sum_size;
-        }
-        MPI_Bcast(&size, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        MPI_Bcast(kbm->hashs[i]->dels->sums, size, MPI_UINT64_T, 0, MPI_COMM_WORLD);
-        kbm->hashs[i]->dels->sum_size = size;
-
-        if (world_rank == 0) {
-            size = kbm->hashs[i]->dels->hash_size;
-        }
-        MPI_Bcast(&size, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        MPI_Bcast(kbm->hashs[i]->dels->hash, size, MPI_UINT64_T, 0, MPI_COMM_WORLD);
-        kbm->hashs[i]->dels->hash_size = size;
-        //broadcast kbm hash del
-
-
-        if (world_size == 0) {
-            size = kbm->reads->size;
-        }
-        MPI_Bcast(&size, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
-        if (world_rank != 0) {
-            kbm->kauxs[i] = init_kbmkauxv(size);
-        }
-        MPI_Bcast(kbm->kauxs[i]->buffer, size, MPI_UINT64_T, 0, MPI_COMM_WORLD);
-        //broadcast kbm kauxs
-    }
 
     if (world_rank != 0) {
-        proc_alignments_core_slave(kbm, ncpu);
+        transfer_kbm(kbm, par, world_rank);
+        proc_alignments_core_slave(kbm, par, ncpu);
         MPI_Finalize();
         return 0;
     }
+
     if (load_nodes && load_clips) {
         fprintf(KBM_LOGF, "[%s] loading nodes from %s ... ", date(), load_nodes);
         fflush(KBM_LOGF);
