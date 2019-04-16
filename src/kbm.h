@@ -89,7 +89,7 @@ struct kbm_bin_t {
 #if 0
 	u4i ridx:28, off:24, closed:1, degree:11; // off * KBM_BIN_SIZE is the real position
 #endif
-    u4i ridx : 30, off : 24, closed : 1,
+    u8i ridx : 30, off : 24, closed : 1,
         degree : 9;    // off * KBM_BIN_SIZE is the real position
 };
 define_list(kbmbinv, kbm_bin_t);
