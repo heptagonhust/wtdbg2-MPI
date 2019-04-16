@@ -7,11 +7,11 @@ module load librarys/glog
 module load mpi/intel-mpi
 
 PARAMETERS="-xont -g144m -t16"
-PARAMETERS="-x sq -g125m -t16"
+#PARAMETERS="-x sq -g125m -t16"
 INPUT_FILE="/home/gpu_ubuntu/public/data/SRR6702603.fastq"
-INPUT_FILE="/home/gpu_ubuntu/public/data/Arabidopsis_assembly.fasta"
+#INPUT_FILE="/home/gpu_ubuntu/public/data/Arabidopsis_assembly.fasta"
 OUTPUT_FILE=test
 export FI_SOCKETS_IFACE=eth0
 export FI_PROVIDER=tcp
 rm -rf ./log/run.log
-mpirun -errfile-pattern ./log/run.log -machinefile ./hostfile -env I_MPI_DEBUG=5 ./build/wtdbg $PARAMETERS -i $INPUT_FILE -fo $OUTPUT_FILE
+mpirun -machinefile ./hostfile -env I_MPI_DEBUG=5 ./build/wtdbg $PARAMETERS -i $INPUT_FILE -fo $OUTPUT_FILE
