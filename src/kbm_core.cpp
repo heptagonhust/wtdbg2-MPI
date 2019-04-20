@@ -1578,7 +1578,7 @@ int _backtrace_map_kbm(KBMAux *aux, int dir, kbm_path_t *p) {
     kbm_cmer_t *c;
     u8i cgoff, sidx;
     u4i i, mat, cnt, gap, cglen;
-    int tmp, x, y, bt;
+    int tmp, x, y, bt,lst;
     dp = aux->dps[dir];
     hit = next_ref_kbmmapv(aux->hits);
     hit->qidx = aux->qidx;
@@ -1602,15 +1602,36 @@ int _backtrace_map_kbm(KBMAux *aux, int dir, kbm_path_t *p) {
     gap = 0;
     x = hit->qe;
     y = hit->te;
+    lst = 0;
     while(x >= hit->qb && y >= hit->tb) {
         bt = get_bit2vec(dp->bts, x + y * aux->qnbin);
         if(get_bitvec(dp->cmask, x + y * aux->qnbit)) {
             c = ref_kbmcmerv(dp->cms, rank_bitvec(dp->cmask, x + y * aux->qnbit));
             cnt += c->kcnt;
             mat += c->kmat;
-            push_bitsvec(aux->cigars, bt);
+            //push_bitsvec(aux->cigars, bt);
+            // try merge 'ID' or 'DI' into 'M'
+			if(lst == 0){
+				if(bt == 0){
+					push_bitsvec(aux->cigars, 0);
+				}
+				lst = bt;
+			} else if(bt == 0){
+				push_bitsvec(aux->cigars, lst);
+				push_bitsvec(aux->cigars, 0);
+				lst = 0;
+			} else if(bt == lst){
+				push_bitsvec(aux->cigars, lst);
+			} else {
+				push_bitsvec(aux->cigars, 0);
+				lst = 0;
+			}
         } else {
             gap++;
+            if(lst){
+				push_bitsvec(aux->cigars, lst);
+			}
+			lst = 0;
             push_bitsvec(aux->cigars, 0x4 | bt);
         }
         switch(bt) {
@@ -1622,6 +1643,9 @@ int _backtrace_map_kbm(KBMAux *aux, int dir, kbm_path_t *p) {
             default: y--; break;
         }
     }
+    if(lst){
+		push_bitsvec(aux->cigars, lst);
+	}
     cglen = aux->cigars->size - cgoff;
     if(mat < (u4i)aux->par->min_mat ||
        mat < UInt(hit->aln * KBM_BSIZE * aux->par->min_sim) ||
