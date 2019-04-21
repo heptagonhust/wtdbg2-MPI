@@ -1478,6 +1478,56 @@ static inline u8i load_alignments_core(Graph *g, FileReader *pws, int raw, rdreg
     return nhit;
 }
 
+static inline u8i merge_hits_into_graph(Graph *g, int raw, rdregv *regs, u4v *maps[3], kbm_map_t *hit,
+                                        BitVec *rdflags, u8i nhit, u8i i, mdbg_struct *mdbg, kbmmapv *hits,
+                                        BitsVec *cigars) {
+    for (i = 0; i < hits->size; i++) {
+        hit = ref_kbmmapv(hits, i);
+        if (hit->mat == 0) continue;
+        if (rdflags &&
+            g->kbm->reads->buffer[hit->tidx].bincnt <
+            g->kbm->reads->buffer[hit->qidx].bincnt &&
+            (hit->tb <= 1 &&
+             hit->te + 1 >=
+             (int) (g->kbm->reads->buffer[hit->tidx].bincnt)) &&
+            (hit->qb > 1 ||
+             hit->qe + 1 <
+             (int) (g->kbm->reads->buffer[hit->qidx].bincnt))) {
+            one_bitvec(rdflags, hit->tidx);
+        }
+    }
+    if (g->chainning_hits) {
+        chainning_hits_core(hits, cigars, g->uniq_hit, g->kbm->par->aln_var);
+    }
+    for (i = 0; i < hits->size; i++) {
+        hit = ref_kbmmapv(hits, i);
+        if (hit->mat == 0) continue;
+        nhit++;
+        append_bitsvec(g->cigars, cigars, hit->cgoff, hit->cglen);
+        hit->cgoff = g->cigars->size - hit->cglen;
+        if (raw) {
+            hit2rdregs_graph(
+                    g, regs,
+                    g->corr_mode ? mdbg->cc->cns->size / KBM_BIN_SIZE : 0,
+                    hit, cigars, maps);
+        } else {
+            map2rdhits_graph(g, hit);
+        }
+    }
+//    fprintf(KBM_LOGF, "[%d]QUERY: %s\t+\t%d\t%d\n", last_mission.rid,
+//            g->kbm->reads->buffer[last_mission.rid].tag, last_mission.beg,
+//            last_mission.end);
+//    for (i = 0; i < hits->size; i++) {
+//        hit = ref_kbmmapv(hits, i);
+//        fprintf(KBM_LOGF, "\t%s\t%c\t%d\t%d\t%d\t%d\t%d\n",
+//                g->kbm->reads->buffer[hit->tidx].tag, "+-"[hit->qdir],
+//                g->kbm->reads->buffer[hit->tidx].rdlen,
+//                hit->tb * KBM_BIN_SIZE, hit->te * KBM_BIN_SIZE,
+//                hit->aln * KBM_BIN_SIZE, hit->mat);
+//    }
+    return nhit;
+}
+
 static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs,
                                        u4v *maps[3], char *prefix, char *dump_kbm) {
     kbm_map_t *hit;
@@ -1643,131 +1693,101 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
             reg_t mission, last_mission;
             kbmmapv *hits, *hits_buffer = init_kbmmapv(16);
             BitsVec *cigars, *cigars_buffer = init_bitsvec(1024, 3);
-            for (rid = qb; rid < qe + ncpu * world_size; rid++) {
-                if (rid < qe) {
-                    pb = ref_kbmreadv(g->kbm->reads, rid);
-                    mission = (reg_t) {0, rid, 0, 0, pb->bincnt, 0, 0};
-                    if ((rid - qb) % world_size == 0) {
-                        if (!KBM_LOG && ((rid - qb) % 2000) == 0) {
-                            fprintf(KBM_LOGF, "\r%u|%llu", rid - qb, nhit);
-                            fflush(KBM_LOGF);
-                        }
-                        thread_wait_one(mdbg);
-                        hits = mdbg->aux->hits;
-                        cigars = mdbg->aux->cigars;
-                        memcpy(&last_mission, &mdbg->reg, sizeof(reg_t));
-                    } else {
-                        if ((rdflags == NULL || get_bitvec(rdflags, rid) == 0)) {
-                            int idx = (rid - qb) % world_size;
-                            MPI_Send(&mission, sizeof(mission), MPI_BYTE, idx, 0, MPI_COMM_WORLD);
-                            MPI_Recv(&last_mission, sizeof(last_mission), MPI_BYTE, idx, 0, MPI_COMM_WORLD,
-                                     MPI_STATUS_IGNORE);
-                            hits = hits_buffer;
-                            cigars = cigars_buffer;
-                            if (last_mission.closed == 0) {
-                                size_t size;
-                                MPI_Recv(&size, 1, MPI_INT64_T, idx, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                                clear_and_encap_kbmmapv(hits, size);
-                                MPI_Recv(hits->buffer, size * sizeof(kbm_map_t), MPI_BYTE, idx, 0, MPI_COMM_WORLD,
-                                         MPI_STATUS_IGNORE);
-                                hits->size = size;
-
-                                auto last_pointer = cigars->bits;
-                                MPI_Recv(cigars, sizeof(BitsVec), MPI_BYTE, idx, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                                cigars->bits = (uint8_t *) realloc(last_pointer,
-                                                                   (cigars->cap * cigars->n_bit + 15) / 8);
-                                MPI_Recv(cigars->bits, (cigars->cap * cigars->n_bit + 15) / 8, MPI_BYTE, idx, 0,
-                                         MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                            }
-                        } else {
-                            continue;
-                        }
+            for (rid = qb; rid < qe; rid++) {
+                pb = ref_kbmreadv(g->kbm->reads, rid);
+                mission = (reg_t) {0, rid, 0, 0, pb->bincnt, 0, 0};
+                int idx = -1, flag = 0;
+                MPI_Status stat;
+                while (idx < 0) {
+                    if (thread_test_all(mdbg, (mdbg->state == 1)) == 0) {
+                        idx = 0;
+                    } else if (MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat) && flag) {
+                        idx = stat.MPI_SOURCE;
+                    }
+                }
+                fprintf(stderr, "mission : %d MPI distribute %d\n", rid, idx);
+                if (idx == 0) {
+                    thread_wait_one(mdbg);
+                    hits = mdbg->aux->hits;
+                    cigars = mdbg->aux->cigars;
+                    memcpy(&last_mission, &mdbg->reg, sizeof(reg_t));
+                    if (last_mission.closed == 0) {
+                        nhit = merge_hits_into_graph(g, raw, regs, maps, hit, rdflags, nhit, i, mdbg, hits, cigars);
+                    }
+                    if ((rdflags == NULL || get_bitvec(rdflags, rid) == 0)) {
+                        memcpy(&mdbg->reg, &mission, sizeof(reg_t));
+                        thread_wake(mdbg);
                     }
                 } else {
-                    mission = (reg_t) {0, rid, 0, 0, 0, 1, 0};
-                    if ((rid - qe) % world_size == 0) {
-                        thread_wait_next(mdbg);
-                        hits = mdbg->aux->hits;
-                        cigars = mdbg->aux->cigars;
-                        memcpy(&last_mission, &mdbg->reg, sizeof(reg_t));
-                    } else {
-                        int idx = (rid - qe) % world_size;
-                        MPI_Send(&mission, sizeof(mission), MPI_BYTE, idx, 0, MPI_COMM_WORLD);
-                        MPI_Recv(&last_mission, sizeof(last_mission), MPI_BYTE, idx, 0, MPI_COMM_WORLD,
+                    MPI_Recv(&last_mission, sizeof(last_mission), MPI_BYTE, idx, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    hits = hits_buffer;
+                    cigars = cigars_buffer;
+                    if (last_mission.closed == 0) {
+                        size_t size;
+                        MPI_Recv(&size, 1, MPI_INT64_T, idx, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                        clear_and_encap_kbmmapv(hits, size);
+                        MPI_Recv(hits->buffer, size * sizeof(kbm_map_t), MPI_BYTE, idx, 0, MPI_COMM_WORLD,
                                  MPI_STATUS_IGNORE);
-                        hits = hits_buffer;
-                        cigars = cigars_buffer;
-                        if (last_mission.closed == 0) {
-                            size_t size;
-                            MPI_Recv(&size, 1, MPI_INT64_T, idx, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                            clear_and_encap_kbmmapv(hits, size);
-                            MPI_Recv(hits->buffer, size * sizeof(kbm_map_t), MPI_BYTE, idx, 0, MPI_COMM_WORLD,
-                                     MPI_STATUS_IGNORE);
-                            hits->size = size;
+                        hits->size = size;
 
-                            auto last_pointer = cigars->bits;
-                            MPI_Recv(cigars, sizeof(BitsVec), MPI_BYTE, idx, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                            cigars->bits = (uint8_t *) realloc(last_pointer, (cigars->cap * cigars->n_bit + 15) / 8);
-                            MPI_Recv(cigars->bits, (cigars->cap * cigars->n_bit + 15) / 8, MPI_BYTE, idx, 0,
-                                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                        }
-
+                        auto last_pointer = cigars->bits;
+                        MPI_Recv(cigars, sizeof(BitsVec), MPI_BYTE, idx, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                        cigars->bits = (uint8_t *) realloc(last_pointer,
+                                                           (cigars->cap * cigars->n_bit + 15) / 8);
+                        MPI_Recv(cigars->bits, (cigars->cap * cigars->n_bit + 15) / 8, MPI_BYTE, idx, 0,
+                                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                        nhit = merge_hits_into_graph(g, raw, regs, maps, hit, rdflags, nhit, i, mdbg, hits, cigars);
+                    }
+                    if ((rdflags == NULL || get_bitvec(rdflags, rid) == 0)) {
+                        MPI_Send(&mission, sizeof(mission), MPI_BYTE, idx, 0, MPI_COMM_WORLD);
+                    } else {
+                        mission = (reg_t) {0, rid, 0, 0, 0, 1, 0};
+                        MPI_Send(&mission, sizeof(mission), MPI_BYTE, idx, 0, MPI_COMM_WORLD);
                     }
                 }
+            }
+            fprintf(stderr, "MPI distribute done\n");
+            for (rid = 0; rid < ncpu; rid++) {
+                thread_wait_next(mdbg);
+                hits = mdbg->aux->hits;
+                cigars = mdbg->aux->cigars;
+                memcpy(&last_mission, &mdbg->reg, sizeof(reg_t));
                 if (last_mission.closed == 0) {
-                    for (i = 0; i < hits->size; i++) {
-                        hit = ref_kbmmapv(hits, i);
-                        if (hit->mat == 0) continue;
-                        if (rdflags &&
-                            g->kbm->reads->buffer[hit->tidx].bincnt <
-                            g->kbm->reads->buffer[hit->qidx].bincnt &&
-                            (hit->tb <= 1 &&
-                             hit->te + 1 >=
-                             (int) (g->kbm->reads->buffer[hit->tidx].bincnt)) &&
-                            (hit->qb > 1 ||
-                             hit->qe + 1 <
-                             (int) (g->kbm->reads->buffer[hit->qidx].bincnt))) {
-                            one_bitvec(rdflags, hit->tidx);
-                        }
-                    }
-                    if (g->chainning_hits) {
-                        chainning_hits_core(hits, cigars, g->uniq_hit, g->kbm->par->aln_var);
-                    }
-                    for (i = 0; i < hits->size; i++) {
-                        hit = ref_kbmmapv(hits, i);
-                        if (hit->mat == 0) continue;
-                        nhit++;
-                        append_bitsvec(g->cigars, cigars, hit->cgoff, hit->cglen);
-                        hit->cgoff = g->cigars->size - hit->cglen;
-                        if (raw) {
-                            hit2rdregs_graph(
-                                    g, regs,
-                                    g->corr_mode ? mdbg->cc->cns->size / KBM_BIN_SIZE : 0,
-                                    hit, cigars, maps);
-                        } else {
-                            map2rdhits_graph(g, hit);
-                        }
-                    }
-//                    if (KBM_LOG) {
-//                        fprintf(KBM_LOGF, "[%d]QUERY: %s\t+\t%d\t%d\n",last_mission.rid,
-//                                g->kbm->reads->buffer[last_mission.rid].tag, last_mission.beg,
-//                                last_mission.end);
-//                        for (i = 0; i < hits->size; i++) {
-//                            hit = ref_kbmmapv(hits, i);
-//                            fprintf(KBM_LOGF, "\t%s\t%c\t%d\t%d\t%d\t%d\t%d\n",
-//                                    g->kbm->reads->buffer[hit->tidx].tag, "+-"[hit->qdir],
-//                                    g->kbm->reads->buffer[hit->tidx].rdlen,
-//                                    hit->tb * KBM_BIN_SIZE, hit->te * KBM_BIN_SIZE,
-//                                    hit->aln * KBM_BIN_SIZE, hit->mat);
-//                        }
-//                  }
-//                    mdbg->reg.closed = 1;
+                    nhit = merge_hits_into_graph(g, raw, regs, maps, hit, rdflags, nhit, i, mdbg, hits, cigars);
                 }
-                if (rid < qe && (rdflags == NULL || get_bitvec(rdflags, rid) == 0) &&
-                    (rid - qb) % world_size == 0) {
-                    memcpy(&mdbg->reg, &mission, sizeof(reg_t));
-                    thread_wake(mdbg);
+                mdbg->reg.closed = 1;
+            }
+            fprintf(stderr, "MPI recycle master done\n");
+            for (rid = 0; rid < (world_size - 1) * ncpu; rid++) {
+                mission = (reg_t) {0, rid, 0, 0, 0, 1, 0};
+                int idx = -1, flag = 0;
+                MPI_Status stat;
+                while (idx < 0) {
+                    if (MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat) && flag) {
+                        idx = stat.MPI_SOURCE;
+                    }
                 }
+                fprintf(stderr, "done with %d", idx);
+                MPI_Recv(&last_mission, sizeof(last_mission), MPI_BYTE, idx, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                hits = hits_buffer;
+                cigars = cigars_buffer;
+                if (last_mission.closed == 0) {
+                    size_t size;
+                    MPI_Recv(&size, 1, MPI_INT64_T, idx, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    clear_and_encap_kbmmapv(hits, size);
+                    MPI_Recv(hits->buffer, size * sizeof(kbm_map_t), MPI_BYTE, idx, 0, MPI_COMM_WORLD,
+                             MPI_STATUS_IGNORE);
+                    hits->size = size;
+
+                    auto last_pointer = cigars->bits;
+                    MPI_Recv(cigars, sizeof(BitsVec), MPI_BYTE, idx, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    cigars->bits = (uint8_t *) realloc(last_pointer,
+                                                       (cigars->cap * cigars->n_bit + 15) / 8);
+                    MPI_Recv(cigars->bits, (cigars->cap * cigars->n_bit + 15) / 8, MPI_BYTE, idx, 0,
+                             MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    nhit = merge_hits_into_graph(g, raw, regs, maps, hit, rdflags, nhit, i, mdbg, hits, cigars);
+                }
+                MPI_Send(&mission, sizeof(mission), MPI_BYTE, idx, 1, MPI_COMM_WORLD);
             }
         }
         if (!KBM_LOG) fprintf(KBM_LOGF, "\r%u reads|total hits %llu\n", qe - qb, nhit);
@@ -1793,6 +1813,7 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
     return nhit;
 }
 
+
 static inline void proc_alignments_core_slave(KBM *kbm, KBMPar *par, int ncpu) {
     int n_cpu;
     thread_prepare(mdbg);
@@ -1816,27 +1837,28 @@ static inline void proc_alignments_core_slave(KBM *kbm, KBMPar *par, int ncpu) {
         mdbg->beg = 0;
         mdbg->end = 0;
     thread_end_init(mdbg);
-//    int world_rank;
-//    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     {
         thread_beg_iter(mdbg);
-            mdbg->task = 1;
+                mdbg->task = 1;
         thread_end_iter(mdbg);
         reg_t mission, last_mission;
+        MPI_Status stat;
         int count = 0;
         while (1) {
-            if(count == ncpu){
-                return;
+            if (count == ncpu) {
+                break;
             }
-            MPI_Recv(&mission, sizeof(mission), MPI_BYTE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            if(mission.closed == 1){
+            if (count) {
                 thread_wait_next(mdbg);
-                ++count;
-            }
-            else
+                count++;
+            } else {
                 thread_wait_one(mdbg);
+            }
+            fprintf(stderr, "mdbg free now from process %d\n", world_rank);
             memcpy(&last_mission, &mdbg->reg, sizeof(reg_t));
-            MPI_Send(&last_mission, sizeof(last_mission), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
+            MPI_Send(&last_mission, sizeof(last_mission), MPI_BYTE, 0, 2, MPI_COMM_WORLD);
             if (last_mission.closed == 0) {
 //                fprintf(KBM_LOGF, "[%s]slave mdbg[%d] hit size %d\n", date(), last_mission.rid, mdbg->aux->hits->size);
                 MPI_Send(&mdbg->aux->hits->size, 1, MPI_UINT64_T, 0, 0, MPI_COMM_WORLD);
@@ -1848,7 +1870,12 @@ static inline void proc_alignments_core_slave(KBM *kbm, KBMPar *par, int ncpu) {
                 MPI_Send(mdbg->aux->cigars->bits, (mdbg->aux->cigars->cap * mdbg->aux->cigars->n_bit + 15) / 8,
                          MPI_BYTE, 0, 0, MPI_COMM_WORLD);
             }
-            if(mission.closed == 0){
+            mdbg->reg.closed = 1;
+            MPI_Recv(&mission, sizeof(mission), MPI_BYTE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
+            if (count == 0 && stat.MPI_TAG == 1) {
+                count = 1;
+            }
+            if (mission.closed == 0) {
                 memcpy(&mdbg->reg, &mission, sizeof(reg_t));
                 thread_wake(mdbg);
             }
