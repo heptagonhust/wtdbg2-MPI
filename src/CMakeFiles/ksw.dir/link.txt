@@ -1,0 +1,2 @@
+/usr/bin/ar qc libksw.a  CMakeFiles/ksw.dir/ksw.cpp.o CMakeFiles/ksw.dir/kbm_opt.cpp.o CMakeFiles/ksw.dir/kbm_core.cpp.o
+/usr/bin/ranlib libksw.a

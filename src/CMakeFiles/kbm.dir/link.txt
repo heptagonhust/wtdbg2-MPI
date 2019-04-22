@@ -1,0 +1,1 @@
+/usr/bin/c++  -g -O0 -Wall -Wno-unused-but-set-variable -mpopcnt -march=native -Wno-pointer-arith -Wno-unused-function -Wno-write-strings -Wno-format  -rdynamic CMakeFiles/kbm.dir/kbm.cpp.o  -o kbm libksw.a -lpthread -lm -lrt -lz -lglog 

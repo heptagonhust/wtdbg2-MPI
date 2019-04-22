@@ -1,0 +1,8 @@
+/mnt/c/Users/Alisa/Documents/MyFile/code/ASC/wtdbg2-GPU/src/CMakeFiles/kbm.dir
+/mnt/c/Users/Alisa/Documents/MyFile/code/ASC/wtdbg2-GPU/src/CMakeFiles/ksw.dir
+/mnt/c/Users/Alisa/Documents/MyFile/code/ASC/wtdbg2-GPU/src/CMakeFiles/edit_cache.dir
+/mnt/c/Users/Alisa/Documents/MyFile/code/ASC/wtdbg2-GPU/src/CMakeFiles/wtdbg-cns.dir
+/mnt/c/Users/Alisa/Documents/MyFile/code/ASC/wtdbg2-GPU/src/CMakeFiles/wtdbg.dir
+/mnt/c/Users/Alisa/Documents/MyFile/code/ASC/wtdbg2-GPU/src/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/Alisa/Documents/MyFile/code/ASC/wtdbg2-GPU/src/CMakeFiles/pgzf.dir
+/mnt/c/Users/Alisa/Documents/MyFile/code/ASC/wtdbg2-GPU/src/CMakeFiles/wtpoa-cns.dir

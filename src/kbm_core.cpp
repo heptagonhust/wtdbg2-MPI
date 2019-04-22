@@ -1,4 +1,5 @@
 #include "kbm_defines.h"
+#include "wtdbg.h"
 #include <mpi.h>
 KBMPar *init_kbmpar() {
     KBMPar *par;
@@ -53,9 +54,9 @@ KBM *init_kbm(KBMPar *par) {
     return kbm;
 }
 
-void transfer_kbm(KBM *kbm, KBMPar *par, int world_rank){
+void transfer_kbm(KBM *kbm, KBMPar *par,KBMPar *rpar,readv *reads,u4i *corr_mode,int world_rank){
     size_t size;
-
+    u4i corrmode;
     MPI_Bcast(&kbm->flags, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
     if (world_rank != 0) {
         kbm->par = init_kbmpar();
@@ -67,10 +68,22 @@ void transfer_kbm(KBM *kbm, KBMPar *par, int world_rank){
     }
     MPI_Bcast(par, sizeof(par), MPI_BYTE, 0, MPI_COMM_WORLD);
 
+    if (world_rank != 0) {
+        rpar = init_kbmpar();
+    }
+    MPI_Bcast(rpar, sizeof(rpar), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+
     if (world_rank == 0) {
         size = kbm->reads->size;
     }
     MPI_Bcast(&size, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
+    //brast corrmode
+    // if(world_rank == 0){
+    //     corrmode = *corr_mode;
+    // }
+    MPI_Bcast(corr_mode, 1 ,MPI_UINT32_T , 0, MPI_COMM_WORLD);
+
     if (world_rank != 0) {
         kbm->reads = init_kbmreadv(size);
     }
@@ -180,6 +193,13 @@ void transfer_kbm(KBM *kbm, KBMPar *par, int world_rank){
         MPI_Bcast(kbm->kauxs[i]->buffer, size, MPI_UINT64_T, 0, MPI_COMM_WORLD);
         kbm->kauxs[i]->size = size;
         //broadcast kbm kauxs
+    }
+    //if (corr_mode) trans g->reads
+    if(*corr_mode){
+         if(world_rank != 0){
+             reads = init_readv(kbm->reads->size);
+         }
+         MPI_Bcast(reads , kbm->reads->size*sizeof(read_t), MPI_BYTE, 0 ,MPI_COMM_WORLD);
     }
 
 }

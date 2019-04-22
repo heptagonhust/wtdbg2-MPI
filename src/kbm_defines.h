@@ -4,7 +4,7 @@
 KBMPar *init_kbmpar();
 void free_kbmpar(KBMPar *par);
 KBM *init_kbm(KBMPar *par);
-void transfer_kbm(KBM *kbm, KBMPar *par, int world_rank);
+void transfer_kbm(KBM *kbm, KBMPar *par,KBMPar *rpar,readv* reads,u4i *corr_mode,int world_rank);
 void free_kbm(KBM *kbm);
 void reset_index_kbm(KBM *kbm);
 void clear_kbm(KBM *kbm);

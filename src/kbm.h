@@ -285,6 +285,27 @@ struct KBMAux {
     String *str;
 };
 
+
+typedef struct {
+    u8i idx : 39, flg : 1, cnt : 24;
+} hit_lnk_t;
+define_list(hitlnkv, hit_lnk_t);
+
+typedef struct {
+    uint64_t idx : 46, cnt : 18;
+} ptr_ref_t;
+
+typedef struct {
+    u8i visit : 63, flag : 1;
+    hit_lnk_t hits;    // point to the g->rdhits
+    int clps[2];
+    ptr_ref_t regs;
+    u2i corr_bincnt;
+} read_t;
+define_list(readv, read_t);
+
+
+
 #define getval_bidx(kbm, offset) (kbm)->vec_bidxaux[offset].bidx
 
 #include "kbm_opt.h"
