@@ -724,49 +724,47 @@ thread_beg_func(mdbg);
     thread_beg_loop(mdbg) ;
             if (mdbg->task == 1) {
                 if (reg->closed) continue;
-               fprintf(KBM_LOGF, "[Work]Dealing with %d\n", reg->rid);
-               if (g->corr_mode) {
-                   if (map_kbmpoa(mdbg->cc, aux, kbm->reads->buffer[reg->rid].tag, reg->rid,
-                                  kbm->rdseqs,
-                                  kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
-                                  UInt(reg->end - reg->beg) * KBM_BIN_SIZE, g->corr_min, g->corr_max,
-                                  g->corr_cov, NULL) == 0) {
-                       clear_kbmmapv(aux->hits);
-                   }
-               } else {
-                deal_with_aux_kbm(
-                        aux, NULL, reg->rid, kbm->rdseqs,
-                        kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
-                        UInt(reg->end - reg->beg) * KBM_BIN_SIZE);
+                if (g->corr_mode) {
+                    if (map_kbmpoa(mdbg->cc, aux, kbm->reads->buffer[reg->rid].tag, reg->rid,
+                                   kbm->rdseqs,
+                                   kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
+                                   UInt(reg->end - reg->beg) * KBM_BIN_SIZE, g->corr_min, g->corr_max,
+                                   g->corr_cov, NULL) == 0) {
+                        clear_kbmmapv(aux->hits);
+                    }
+                } else {
+                    deal_with_aux_kbm(
+                            aux, NULL, reg->rid, kbm->rdseqs,
+                            kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
+                            UInt(reg->end - reg->beg) * KBM_BIN_SIZE);
                 }
 
 
-               if (raux && aux->hits->size) {    // refine
-                   kbm_read_t *rd;
-                   u4i i, j, tidx;
-                   clear_kbm(raux->kbm);
-                   bitpush_kbm(raux->kbm, NULL, 0, kbm->rdseqs->bits,
-                               kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
-                               UInt(reg->end - reg->beg) * KBM_BIN_SIZE);
-                   ready_kbm(raux->kbm);
-                   simple_index_kbm(raux->kbm, 0, raux->kbm->bins->size);
-                   clear_u4v(tidxs);
-                   for (i = 0; i < aux->hits->size; i++) {
-                       if (i && tidxs->buffer[tidxs->size - 1] == aux->hits->buffer[i].tidx) continue;
-                       push_u4v(tidxs, aux->hits->buffer[i].tidx);
-                   }
-                   clear_kbmmapv(aux->hits);
-                   clear_bitsvec(aux->cigars);
-                   for (i = 0; i < tidxs->size; i++) {
-                       tidx = get_u4v(tidxs, i);
-                       rd = ref_kbmreadv(aux->kbm->reads, tidx);
-                       deal_with_aux_kbm(raux, rd->tag, tidx, aux->kbm->rdseqs, rd->rdoff, rd->rdlen);
-                       for (j = 0; j < raux->hits->size; j++) {
-                           flip_hit_kbmaux(aux, raux, j);
-                       }
-                   }
-               }
-
+                if (raux && aux->hits->size) {    // refine
+                    kbm_read_t *rd;
+                    u4i i, j, tidx;
+                    clear_kbm(raux->kbm);
+                    bitpush_kbm(raux->kbm, NULL, 0, kbm->rdseqs->bits,
+                                kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
+                                UInt(reg->end - reg->beg) * KBM_BIN_SIZE);
+                    ready_kbm(raux->kbm);
+                    simple_index_kbm(raux->kbm, 0, raux->kbm->bins->size);
+                    clear_u4v(tidxs);
+                    for (i = 0; i < aux->hits->size; i++) {
+                        if (i && tidxs->buffer[tidxs->size - 1] == aux->hits->buffer[i].tidx) continue;
+                        push_u4v(tidxs, aux->hits->buffer[i].tidx);
+                    }
+                    clear_kbmmapv(aux->hits);
+                    clear_bitsvec(aux->cigars);
+                    for (i = 0; i < tidxs->size; i++) {
+                        tidx = get_u4v(tidxs, i);
+                        rd = ref_kbmreadv(aux->kbm->reads, tidx);
+                        deal_with_aux_kbm(raux, rd->tag, tidx, aux->kbm->rdseqs, rd->rdoff, rd->rdlen);
+                        for (j = 0; j < raux->hits->size; j++) {
+                            flip_hit_kbmaux(aux, raux, j);
+                        }
+                    }
+                }
 
 
                 sort_array(aux->hits->buffer, aux->hits->size, kbm_map_t, num_cmpgt(b.mat, a.mat));
@@ -1692,8 +1690,8 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
         }
 
 
-
-        transfer_kbm(g->kbm, g->par,g->rpar,&(g->corr_mode),&(g->corr_min),&(g->corr_max),&(g->corr_cov),world_rank);
+        transfer_kbm(g->kbm, g->par, g->rpar, &(g->corr_mode), &(g->corr_min), &(g->corr_max), &(g->corr_cov),
+                     world_rank);
         {
             thread_beg_iter(mdbg);
                     mdbg->task = 1;
@@ -1710,10 +1708,10 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
                     if (thread_test_all(mdbg, (mdbg->state == 1)) == 0) {
                         idx = 0;
                     } else {
-                            MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat);
-                            if (flag) {
-                                idx = stat.MPI_SOURCE;
-                            }
+                        MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat);
+                        if (flag) {
+                            idx = stat.MPI_SOURCE;
+                        }
                     }
                 }
                 fprintf(stderr, "mission : %d MPI distribute %d\n", rid, idx);
@@ -1723,9 +1721,9 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
                     cigars = mdbg->aux->cigars;
                     memcpy(&last_mission, &mdbg->reg, sizeof(reg_t));
                     if (last_mission.closed == 0) {
-                        if( g->corr_mode && mdbg->cc->cns->size) {
+                        if (g->corr_mode && mdbg->cc->cns->size) {
                             g->reads->buffer[mdbg->reg.rid].corr_bincnt =
-                                mdbg->cc->cns->size / KBM_BIN_SIZE;
+                                    mdbg->cc->cns->size / KBM_BIN_SIZE;
                         }
                         nhit = merge_hits_into_graph(g, raw, regs, maps, hit, rdflags, nhit, i, mdbg, hits, cigars);
                     }
@@ -1751,9 +1749,9 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
                                                            (cigars->cap * cigars->n_bit + 15) / 8);
                         MPI_Recv(cigars->bits, (cigars->cap * cigars->n_bit + 15) / 8, MPI_BYTE, idx, 0,
                                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                        if( g->corr_mode && mdbg->cc->cns->size) {
+                        if (g->corr_mode && mdbg->cc->cns->size) {
                             g->reads->buffer[mdbg->reg.rid].corr_bincnt =
-                                mdbg->cc->cns->size / KBM_BIN_SIZE;
+                                    mdbg->cc->cns->size / KBM_BIN_SIZE;
                         }
                         nhit = merge_hits_into_graph(g, raw, regs, maps, hit, rdflags, nhit, i, mdbg, hits, cigars);
                     }
@@ -1772,9 +1770,9 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
                 cigars = mdbg->aux->cigars;
                 memcpy(&last_mission, &mdbg->reg, sizeof(reg_t));
                 if (last_mission.closed == 0) {
-                    if( g->corr_mode && mdbg->cc->cns->size) {
+                    if (g->corr_mode && mdbg->cc->cns->size) {
                         g->reads->buffer[mdbg->reg.rid].corr_bincnt =
-                            mdbg->cc->cns->size / KBM_BIN_SIZE;
+                                mdbg->cc->cns->size / KBM_BIN_SIZE;
                     }
                     nhit = merge_hits_into_graph(g, raw, regs, maps, hit, rdflags, nhit, i, mdbg, hits, cigars);
                 }
@@ -1786,10 +1784,10 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
                 int idx = -1, flag = 0;
                 MPI_Status stat;
                 while (idx < 0) {
-                        MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat);
-                        if (flag) {
-                            idx = stat.MPI_SOURCE;
-                        }
+                    MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat);
+                    if (flag) {
+                        idx = stat.MPI_SOURCE;
+                    }
                 }
                 fprintf(stderr, "done with %d", idx);
                 MPI_Recv(&last_mission, sizeof(last_mission), MPI_BYTE, idx, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -1809,9 +1807,9 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
                                                        (cigars->cap * cigars->n_bit + 15) / 8);
                     MPI_Recv(cigars->bits, (cigars->cap * cigars->n_bit + 15) / 8, MPI_BYTE, idx, 0,
                              MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                    if(g->corr_mode && mdbg->cc->cns->size) {
+                    if (g->corr_mode && mdbg->cc->cns->size) {
                         g->reads->buffer[mdbg->reg.rid].corr_bincnt =
-                            mdbg->cc->cns->size / KBM_BIN_SIZE;
+                                mdbg->cc->cns->size / KBM_BIN_SIZE;
                     }
                     nhit = merge_hits_into_graph(g, raw, regs, maps, hit, rdflags, nhit, i, mdbg, hits, cigars);
                 }
@@ -1842,7 +1840,7 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
 }
 
 
-static inline void proc_alignments_core_slave(KBM *kbm, KBMPar *par,KBMPar *rpar, int ncpu) {
+static inline void proc_alignments_core_slave(KBM *kbm, KBMPar *par, KBMPar *rpar, int ncpu) {
     int n_cpu;
     thread_prepare(mdbg);
 //    if(KBM_LOG)
@@ -1854,11 +1852,11 @@ static inline void proc_alignments_core_slave(KBM *kbm, KBMPar *par,KBMPar *rpar
         mdbg->kbm = kbm;
         mdbg->reg.closed = 1;
         mdbg->aux = init_kbmaux(kbm);
-       if(rpar) {
-           mdbg->raux = init_kbmaux(init_kbm(rpar));
-       } else {
-        mdbg->raux = NULL;
-       }
+        if (rpar) {
+            mdbg->raux = init_kbmaux(init_kbm(rpar));
+        } else {
+            mdbg->raux = NULL;
+        }
         mdbg->cc = NULL;
         mdbg->aux->par = (KBMPar *) malloc(sizeof(KBMPar));
         memcpy(mdbg->aux->par, par, sizeof(KBMPar));

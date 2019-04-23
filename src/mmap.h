@@ -12,7 +12,7 @@
 # define MAP_HUGE_1GB (30 << 26)
 #endif
 
-const size_t page_size = 1UL * 1024 * 1024 * 1024;
+const size_t page_size = 2UL * 1024 * 1024;
 
 template<typename T>
 class mmap_allocator {
@@ -27,9 +27,9 @@ public:
             length = (length / page_size + 1) * page_size;
         }
         allocated = length;
-        fprintf(stderr, "Allocated: %d\n",allocated);
+        fprintf(stderr, "mmap allocate: %d\n",allocated);
         mm_data = mmap(NULL, length, (PROT_READ | PROT_WRITE),
-                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0);
+                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
         if(mm_data == MAP_FAILED){
             perror("mmap");
             exit(1);
