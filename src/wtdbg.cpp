@@ -1222,8 +1222,8 @@ int main(int argc, char **argv) {
 
 
     if (world_rank != 0) {
-        transfer_kbm(kbm, par, world_rank);
-        proc_alignments_core_slave(kbm, par, ncpu);
+        transfer_kbm(g->kbm, g->par,g->rpar,&(g->corr_mode),&(g->corr_min),&(g->corr_max),&(g->corr_cov),world_rank);
+        proc_alignments_core_slave(kbm, par, g->rpar, ncpu);
         MPI_Finalize();
         return 0;
     }

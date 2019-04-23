@@ -53,7 +53,7 @@ KBM *init_kbm(KBMPar *par) {
     return kbm;
 }
 
-void transfer_kbm(KBM *kbm, KBMPar *par,KBMPar *rpar,u4i *corr_mode,int world_rank){
+void transfer_kbm(KBM *kbm, KBMPar *par,KBMPar *rpar,u4i *corr_mode,u4i *corr_min,u4i *corr_max,float *corr_cov,int world_rank){
     size_t size;
 
     MPI_Bcast(&kbm->flags, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
@@ -78,6 +78,11 @@ void transfer_kbm(KBM *kbm, KBMPar *par,KBMPar *rpar,u4i *corr_mode,int world_ra
     }
     MPI_Bcast(&size, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
     MPI_Bcast(corr_mode, 1 ,MPI_UINT32_T , 0, MPI_COMM_WORLD);
+    if(corr_mode){
+        MPI_Bcast(corr_min, 1 ,MPI_UINT32_T , 0, MPI_COMM_WORLD);
+        MPI_Bcast(corr_max, 1 ,MPI_UINT32_T , 0, MPI_COMM_WORLD);
+        MPI_Bcast(corr_cov, 1 ,MPI_FLOAT , 0, MPI_COMM_WORLD);
+    }
     if (world_rank != 0) {
         kbm->reads = init_kbmreadv(size);
     }
