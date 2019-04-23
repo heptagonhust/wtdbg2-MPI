@@ -1701,8 +1701,11 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
                 while (idx < 0) {
                     if (thread_test_all(mdbg, (mdbg->state == 1)) == 0) {
                         idx = 0;
-                    } else if (MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat) && flag) {
-                        idx = stat.MPI_SOURCE;
+                    } else {
+                            MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat);
+                            if (flag) {
+                                idx = stat.MPI_SOURCE;
+                            }
                     }
                 }
                 fprintf(stderr, "mission : %d MPI distribute %d\n", rid, idx);
@@ -1763,9 +1766,10 @@ static inline u8i proc_alignments_core(Graph *g, int ncpu, int raw, rdregv *regs
                 int idx = -1, flag = 0;
                 MPI_Status stat;
                 while (idx < 0) {
-                    if (MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat) && flag) {
-                        idx = stat.MPI_SOURCE;
-                    }
+                        MPI_Iprobe(MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &flag, &stat);
+                        if (flag) {
+                            idx = stat.MPI_SOURCE;
+                        }
                 }
                 fprintf(stderr, "done with %d", idx);
                 MPI_Recv(&last_mission, sizeof(last_mission), MPI_BYTE, idx, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
