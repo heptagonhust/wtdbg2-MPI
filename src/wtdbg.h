@@ -721,7 +721,7 @@ tidxs = init_u4v(16);
 thread_beg_loop(mdbg);
 if(mdbg->task == 1) {
     if(reg->closed) continue;
-    if(g->corr_mode) {
+    if(g->) {
         if(map_kbmpoa(mdbg->cc, aux, kbm->reads->buffer[reg->rid].tag, reg->rid,
                       kbm->rdseqs,
                       kbm->reads->buffer[reg->rid].rdoff + UInt(reg->beg) * KBM_BIN_SIZE,
